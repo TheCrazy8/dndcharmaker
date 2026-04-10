@@ -41,34 +41,26 @@ function calcInventory() {
   const totalEl = document.getElementById('inv-total-weight');
   if (totalEl) totalEl.textContent = totalWeight;
 
-  // Calculate encumbrance based on STR score
+  // Calculate encumbrance based on STR score (variant encumbrance rules)
   const strScore = getScore('str');
-  const normalMax = strScore * 15;
-  const encumberedMax = strScore * 15; // encumbered above this (variant)
-  const heavyMax = strScore * 10;      // heavily encumbered = STR*10 (variant)
+  const carryCapacity = strScore * 15;
+  const lightThreshold = strScore * 5;   // encumbered above this
+  const heavyThreshold = strScore * 10;  // heavily encumbered above this
 
   const capacityEl = document.getElementById('inv-capacity');
-  if (capacityEl) capacityEl.textContent = `(Capacity: ${normalMax} lb)`;
+  if (capacityEl) capacityEl.textContent = `(Capacity: ${carryCapacity} lb)`;
 
   const statusEl = document.getElementById('inv-encumbrance');
   if (statusEl) {
-    if (totalWeight > normalMax) {
+    if (totalWeight > carryCapacity) {
       statusEl.textContent = '⚠️ Over Capacity!';
       statusEl.className = 'inv-encumbrance inv-over';
-    } else if (totalWeight > normalMax - heavyMax) {
-      // Using variant encumbrance: STR*10 = heavily, STR*5 = lightly
-      const lightThreshold = strScore * 5;
-      const heavyThreshold = strScore * 10;
-      if (totalWeight > heavyThreshold) {
-        statusEl.textContent = '🔴 Heavily Encumbered';
-        statusEl.className = 'inv-encumbrance inv-heavy';
-      } else if (totalWeight > lightThreshold) {
-        statusEl.textContent = '🟡 Encumbered';
-        statusEl.className = 'inv-encumbrance inv-enc';
-      } else {
-        statusEl.textContent = '✅ Normal';
-        statusEl.className = 'inv-encumbrance inv-normal';
-      }
+    } else if (totalWeight > heavyThreshold) {
+      statusEl.textContent = '🔴 Heavily Encumbered';
+      statusEl.className = 'inv-encumbrance inv-heavy';
+    } else if (totalWeight > lightThreshold) {
+      statusEl.textContent = '🟡 Encumbered';
+      statusEl.className = 'inv-encumbrance inv-enc';
     } else {
       statusEl.textContent = '✅ Normal';
       statusEl.className = 'inv-encumbrance inv-normal';
