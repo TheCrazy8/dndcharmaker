@@ -27,6 +27,8 @@
       </label>
       <button id="btn-print" class="action-btn" title="Print">🖨️ Print</button>
       <button id="btn-theme" class="action-btn" title="Toggle Dark/Light Mode">🌙 Dark</button>
+      <button id="btn-characters" class="action-btn" title="Manage Characters">👤 Characters</button>
+      <button id="btn-pointbuy" class="action-btn" title="Point Buy Calculator">🧮 Point Buy</button>
     </div>
   </header>
 
@@ -40,6 +42,25 @@
       <!-- Header Row -->
       <div class="section header-section">
         <div class="header-grid">
+<!-- Character Portrait / Avatar -->
+<div class="section portrait-section">
+  <h3 class="section-title">🖼️ Portrait</h3>
+  <div class="portrait-frame">
+    <img id="portrait-img" class="portrait-image" src="" alt="Character Portrait" style="display:none" />
+    <div id="portrait-placeholder" class="portrait-placeholder">
+      <span class="portrait-placeholder-icon">🧙</span>
+      <span class="portrait-placeholder-text">No portrait</span>
+    </div>
+  </div>
+  <div class="portrait-actions">
+    <label class="action-btn portrait-upload-btn" title="Upload Portrait">
+      📷 Upload
+      <input type="file" id="portrait-upload" accept="image/*" style="display:none" onchange="uploadPortrait(event)" />
+    </label>
+    <button class="action-btn portrait-clear-btn" title="Clear Portrait" onclick="clearPortrait()">🗑️ Clear</button>
+  </div>
+</div>
+
           <div class="field-group span-2">
             <label for="char-name">Character Name</label>
             <input type="text" id="char-name" data-key="charName" placeholder="Enter name…" class="large-input" />
@@ -113,6 +134,67 @@
         </div>
       </div>
 
+      <!-- XP Progress -->
+<!-- XP Progress Bar -->
+<div class="section xp-progress-section">
+  <h3 class="section-title">📊 XP Progress</h3>
+  <div class="xp-info-row">
+    <span class="xp-level-label">Level <span id="xp-current-level">1</span></span>
+    <span class="xp-values">
+      <span id="xp-current-val">0</span> / <span id="xp-next-val">300</span> XP
+    </span>
+  </div>
+  <div class="xp-bar-track">
+    <div class="xp-bar-fill" id="xp-bar-fill" style="width: 0%"></div>
+    <span class="xp-bar-text" id="xp-bar-text">0%</span>
+  </div>
+  <div class="xp-milestone-row">
+    <span class="xp-prev-label" id="xp-prev-label">0 XP</span>
+    <span class="xp-next-label" id="xp-next-label">Next: 300 XP</span>
+  </div>
+</div>
+
+<!--
+  Integration JS — add to recalcAll() or call updateXPBar() from recalcAll():
+
+  const XP_THRESHOLDS = [
+    0, 0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000,
+    85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000
+  ];
+
+  function updateXPBar() {
+    const level = Math.max(1, Math.min(20, Number(document.getElementById('level')?.value) || 1));
+    const xp = Number(document.getElementById('xp')?.value) || 0;
+
+    const currentThreshold = XP_THRESHOLDS[level] || 0;
+    const nextThreshold = level >= 20 ? XP_THRESHOLDS[20] : (XP_THRESHOLDS[level + 1] || 0);
+    const xpIntoLevel = xp - currentThreshold;
+    const xpNeeded = nextThreshold - currentThreshold;
+    const pct = level >= 20 ? 100 : (xpNeeded > 0 ? Math.min(100, Math.max(0, (xpIntoLevel / xpNeeded) * 100)) : 0);
+
+    const lvlEl = document.getElementById('xp-current-level');
+    const curEl = document.getElementById('xp-current-val');
+    const nextEl = document.getElementById('xp-next-val');
+    const fillEl = document.getElementById('xp-bar-fill');
+    const textEl = document.getElementById('xp-bar-text');
+    const prevLabel = document.getElementById('xp-prev-label');
+    const nextLabel = document.getElementById('xp-next-label');
+
+    if (lvlEl) lvlEl.textContent = level;
+    if (curEl) curEl.textContent = xp.toLocaleString();
+    if (nextEl) nextEl.textContent = level >= 20 ? 'MAX' : nextThreshold.toLocaleString();
+    if (fillEl) {
+      fillEl.style.width = pct + '%';
+      fillEl.classList.toggle('maxed', level >= 20);
+    }
+    if (textEl) textEl.textContent = level >= 20 ? 'MAX LEVEL' : Math.round(pct) + '%';
+    if (prevLabel) prevLabel.textContent = currentThreshold.toLocaleString() + ' XP';
+    if (nextLabel) nextLabel.textContent = level >= 20 ? 'Max Level!' : 'Next: ' + nextThreshold.toLocaleString() + ' XP';
+  }
+-->
+
+
+
       <!-- Combat Stats Row -->
       <div class="section combat-section">
         <div class="combat-grid">
@@ -184,6 +266,23 @@
             </div>
           </div>
         </div>
+<!-- Short Rest / Long Rest Buttons -->
+<div class="section rest-section">
+  <h3 class="section-title">🏕️ Resting</h3>
+  <div class="rest-buttons">
+    <button class="rest-btn rest-short" onclick="shortRest()" title="Recover hit dice (up to half your level, minimum 1)">
+      <span class="rest-icon">🌤️</span>
+      <span class="rest-label">Short Rest</span>
+      <span class="rest-desc">Spend hit dice to heal</span>
+    </button>
+    <button class="rest-btn rest-long" onclick="longRest()" title="Recover all HP, all hit dice, clear death saves, reduce exhaustion by 1">
+      <span class="rest-icon">🌙</span>
+      <span class="rest-label">Long Rest</span>
+      <span class="rest-desc">Full recovery</span>
+    </button>
+  </div>
+</div>
+
       </div>
 
       <!-- Main Three-Column Layout -->
@@ -494,6 +593,118 @@
             </label>
           </div>
 
+<!-- Exhaustion Tracker -->
+<div class="section exhaustion-section">
+  <h3 class="section-title">⚡ Exhaustion</h3>
+  <div class="exhaustion-levels">
+    <label class="exhaustion-level level-1" title="Disadvantage on ability checks">
+      <input type="checkbox" data-key="exhaustion1" />
+      <span class="exhaustion-mark"></span>
+      <span class="exhaustion-num">1</span>
+      <span class="exhaustion-effect">Disadvantage on ability checks</span>
+    </label>
+    <label class="exhaustion-level level-2" title="Speed halved">
+      <input type="checkbox" data-key="exhaustion2" />
+      <span class="exhaustion-mark"></span>
+      <span class="exhaustion-num">2</span>
+      <span class="exhaustion-effect">Speed halved</span>
+    </label>
+    <label class="exhaustion-level level-3" title="Disadvantage on attack rolls and saving throws">
+      <input type="checkbox" data-key="exhaustion3" />
+      <span class="exhaustion-mark"></span>
+      <span class="exhaustion-num">3</span>
+      <span class="exhaustion-effect">Disadvantage on attacks &amp; saves</span>
+    </label>
+    <label class="exhaustion-level level-4" title="Hit point maximum halved">
+      <input type="checkbox" data-key="exhaustion4" />
+      <span class="exhaustion-mark"></span>
+      <span class="exhaustion-num">4</span>
+      <span class="exhaustion-effect">HP maximum halved</span>
+    </label>
+    <label class="exhaustion-level level-5" title="Speed reduced to 0">
+      <input type="checkbox" data-key="exhaustion5" />
+      <span class="exhaustion-mark"></span>
+      <span class="exhaustion-num">5</span>
+      <span class="exhaustion-effect">Speed reduced to 0</span>
+    </label>
+    <label class="exhaustion-level level-6" title="Death">
+      <input type="checkbox" data-key="exhaustion6" />
+      <span class="exhaustion-mark"></span>
+      <span class="exhaustion-num">6</span>
+      <span class="exhaustion-effect">💀 Death</span>
+    </label>
+  </div>
+</div>
+
+
+<!-- Conditions Panel -->
+<div class="section conditions-section">
+  <h3 class="section-title">🛡️ Conditions</h3>
+  <div class="conditions-grid">
+    <label class="condition-toggle" title="A blinded creature can't see and automatically fails any ability check that requires sight. Attack rolls against the creature have advantage, and the creature's attack rolls have disadvantage.">
+      <input type="checkbox" data-key="condBlinded" />
+      <span class="condition-btn">👁️ Blinded</span>
+    </label>
+    <label class="condition-toggle" title="A charmed creature can't attack the charmer or target the charmer with harmful abilities or magical effects. The charmer has advantage on any ability check to interact socially with the creature.">
+      <input type="checkbox" data-key="condCharmed" />
+      <span class="condition-btn">💖 Charmed</span>
+    </label>
+    <label class="condition-toggle" title="A deafened creature can't hear and automatically fails any ability check that requires hearing.">
+      <input type="checkbox" data-key="condDeafened" />
+      <span class="condition-btn">🔇 Deafened</span>
+    </label>
+    <label class="condition-toggle" title="A frightened creature has disadvantage on ability checks and attack rolls while the source of its fear is within line of sight. The creature can't willingly move closer to the source of its fear.">
+      <input type="checkbox" data-key="condFrightened" />
+      <span class="condition-btn">😨 Frightened</span>
+    </label>
+    <label class="condition-toggle" title="A grappled creature's speed becomes 0, and it can't benefit from any bonus to its speed. The condition ends if the grappler is incapacitated or if the creature is moved outside the grapple's range.">
+      <input type="checkbox" data-key="condGrappled" />
+      <span class="condition-btn">🤼 Grappled</span>
+    </label>
+    <label class="condition-toggle" title="An incapacitated creature can't take actions or reactions.">
+      <input type="checkbox" data-key="condIncapacitated" />
+      <span class="condition-btn">🚫 Incapacitated</span>
+    </label>
+    <label class="condition-toggle" title="An invisible creature is impossible to see without the aid of magic or a special sense. The creature has advantage on attack rolls, and attack rolls against it have disadvantage.">
+      <input type="checkbox" data-key="condInvisible" />
+      <span class="condition-btn">👻 Invisible</span>
+    </label>
+    <label class="condition-toggle" title="A paralyzed creature is incapacitated and can't move or speak. The creature automatically fails STR and DEX saving throws. Attack rolls against the creature have advantage, and any attack that hits is a critical hit if the attacker is within 5 feet.">
+      <input type="checkbox" data-key="condParalyzed" />
+      <span class="condition-btn">⚡ Paralyzed</span>
+    </label>
+    <label class="condition-toggle" title="A petrified creature is transformed, along with any nonmagical object it is wearing or carrying, into a solid inanimate substance. It is incapacitated, can't move or speak, and is unaware of its surroundings. It has resistance to all damage and is immune to poison and disease.">
+      <input type="checkbox" data-key="condPetrified" />
+      <span class="condition-btn">🪨 Petrified</span>
+    </label>
+    <label class="condition-toggle" title="A poisoned creature has disadvantage on attack rolls and ability checks.">
+      <input type="checkbox" data-key="condPoisoned" />
+      <span class="condition-btn">🤢 Poisoned</span>
+    </label>
+    <label class="condition-toggle" title="A prone creature's only movement option is to crawl. The creature has disadvantage on attack rolls. An attack roll against the creature has advantage if the attacker is within 5 feet, otherwise disadvantage.">
+      <input type="checkbox" data-key="condProne" />
+      <span class="condition-btn">🔽 Prone</span>
+    </label>
+    <label class="condition-toggle" title="A restrained creature's speed becomes 0. Attack rolls against the creature have advantage, and the creature's attack rolls have disadvantage. The creature has disadvantage on DEX saving throws.">
+      <input type="checkbox" data-key="condRestrained" />
+      <span class="condition-btn">⛓️ Restrained</span>
+    </label>
+    <label class="condition-toggle" title="A stunned creature is incapacitated, can't move, and can speak only falteringly. The creature automatically fails STR and DEX saving throws. Attack rolls against the creature have advantage.">
+      <input type="checkbox" data-key="condStunned" />
+      <span class="condition-btn">💫 Stunned</span>
+    </label>
+    <label class="condition-toggle" title="An unconscious creature is incapacitated, can't move or speak, and is unaware of its surroundings. The creature drops what it's holding and falls prone. Attack rolls against the creature have advantage, and any hit is a critical hit within 5 feet.">
+      <input type="checkbox" data-key="condUnconscious" />
+      <span class="condition-btn">💤 Unconscious</span>
+    </label>
+    <label class="condition-toggle condition-exhaustion-link" title="See Exhaustion tracker above for detailed level effects.">
+      <input type="checkbox" data-key="condExhaustion" />
+      <span class="condition-btn">😩 Exhaustion</span>
+    </label>
+  </div>
+</div>
+
+
           <!-- Equipment Training & Proficiencies -->
           <div class="section proficiencies-section">
             <h3 class="section-title">Equipment Training &amp; Proficiencies</h3>
@@ -697,6 +908,26 @@
             <textarea data-key="conditions" rows="4" placeholder="Poisoned, Charmed, etc.…"></textarea>
           </div>
 
+<!-- Resistances, Immunities & Vulnerabilities -->
+<div class="section resistances-section">
+  <h3 class="section-title">🛡️ Resistances, Immunities &amp; Vulnerabilities</h3>
+  <div class="resistances-grid">
+    <div class="field-group">
+      <label for="resistances">Resistances</label>
+      <textarea id="resistances" data-key="resistances" rows="3" placeholder="e.g. Fire, Cold, Necrotic…"></textarea>
+    </div>
+    <div class="field-group">
+      <label for="immunities">Immunities</label>
+      <textarea id="immunities" data-key="immunities" rows="3" placeholder="e.g. Poison, Psychic…"></textarea>
+    </div>
+    <div class="field-group">
+      <label for="vulnerabilities">Vulnerabilities</label>
+      <textarea id="vulnerabilities" data-key="vulnerabilities" rows="3" placeholder="e.g. Radiant, Thunder…"></textarea>
+    </div>
+  </div>
+</div>
+
+
           <div class="section">
             <h3 class="section-title">Silk</h3>
             <div class="field-row">
@@ -760,6 +991,63 @@
               </div>
             </div>
           </div>
+
+<!-- Concentration Tracker -->
+<div class="section concentration-section">
+  <h3 class="section-title">🎯 Concentration</h3>
+  <div id="concentration-widget" class="concentration-widget">
+    <div class="concentration-inactive" id="concentration-inactive">
+      <span class="concentration-none-text">Not concentrating</span>
+    </div>
+    <div class="concentration-active" id="concentration-active" style="display:none">
+      <div class="concentration-info">
+        <span class="concentration-spell-label">Spell:</span>
+        <input type="text" id="concentration-spell" data-key="concentrationSpell" placeholder="Spell name…" class="concentration-spell-input" />
+      </div>
+      <div class="concentration-info">
+        <span class="concentration-spell-label">Duration:</span>
+        <input type="text" id="concentration-duration" data-key="concentrationDuration" placeholder="e.g. 1 minute" class="concentration-duration-input" />
+      </div>
+      <button class="concentration-dismiss" onclick="dismissConcentration()" title="Drop concentration">✖ Drop</button>
+    </div>
+    <button class="concentration-start-btn" id="concentration-start-btn" onclick="startConcentration()" title="Begin concentrating on a spell">🎯 Concentrate</button>
+  </div>
+</div>
+
+<!--
+  Integration JS (add to script.js):
+
+  function startConcentration() {
+    document.getElementById('concentration-active').style.display = 'block';
+    document.getElementById('concentration-inactive').style.display = 'none';
+    document.getElementById('concentration-start-btn').style.display = 'none';
+    document.getElementById('concentration-spell').focus();
+  }
+
+  function dismissConcentration() {
+    if (!confirm('Drop concentration?')) return;
+    const spellEl = document.getElementById('concentration-spell');
+    const durEl = document.getElementById('concentration-duration');
+    if (spellEl) spellEl.value = '';
+    if (durEl) durEl.value = '';
+    document.getElementById('concentration-active').style.display = 'none';
+    document.getElementById('concentration-inactive').style.display = 'block';
+    document.getElementById('concentration-start-btn').style.display = 'block';
+    saveToStorage();
+  }
+
+  // In loadFromStorage or after applyData, call initConcentration():
+  function initConcentration() {
+    const data = loadRaw();
+    if (data.concentrationSpell) {
+      document.getElementById('concentration-active').style.display = 'block';
+      document.getElementById('concentration-inactive').style.display = 'none';
+      document.getElementById('concentration-start-btn').style.display = 'none';
+    }
+  }
+-->
+
+
 
           <!-- Spell Slots -->
           <div class="section">
@@ -875,6 +1163,33 @@
             </div>
           </div>
 
+<!-- Inventory with Weight Tracking -->
+<div class="section inventory-section">
+  <h3 class="section-title">🎒 Inventory</h3>
+  <div class="inventory-summary" id="inventory-summary">
+    <span class="inv-weight-label">Total Weight: <strong id="inv-total-weight">0</strong> lb</span>
+    <span class="inv-encumbrance" id="inv-encumbrance">Normal</span>
+    <span class="inv-capacity" id="inv-capacity">(Capacity: 150 lb)</span>
+  </div>
+  <div class="table-wrapper">
+    <table class="inventory-table">
+      <thead>
+        <tr>
+          <th class="inv-col-name">Item Name</th>
+          <th class="inv-col-qty">Qty</th>
+          <th class="inv-col-wt">Wt (ea)</th>
+          <th class="inv-col-total">Total</th>
+          <th class="inv-col-notes">Notes</th>
+        </tr>
+      </thead>
+      <tbody id="inventory-tbody">
+        <!-- 20 rows generated by JS or paste statically -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
         </div><!-- end details-col -->
       </div>
     </section>
@@ -890,6 +1205,305 @@
     </section>
 
   </main>
+
+  <!-- ============================================================ -->
+  <!-- DICE ROLLER — Floating button + panel overlay               -->
+  <!-- ============================================================ -->
+
+  <!-- Floating trigger button -->
+  <button id="dice-roller-fab" class="dice-fab" title="Dice Roller" aria-label="Open Dice Roller">🎲</button>
+
+  <!-- Dice Roller Panel -->
+  <div id="dice-roller-overlay" class="dice-overlay hidden" aria-hidden="true">
+    <div class="dice-panel" role="dialog" aria-label="Dice Roller">
+
+      <!-- Panel Header -->
+      <div class="dice-panel-header">
+        <h2 class="dice-panel-title">🎲 Dice Roller</h2>
+        <button id="dice-roller-close" class="dice-close-btn" title="Close" aria-label="Close Dice Roller">&times;</button>
+      </div>
+
+      <!-- Quick-Roll Buttons -->
+      <div class="dice-quick-row">
+        <button class="dice-quick-btn" data-die="d4">d4</button>
+        <button class="dice-quick-btn" data-die="d6">d6</button>
+        <button class="dice-quick-btn" data-die="d8">d8</button>
+        <button class="dice-quick-btn" data-die="d10">d10</button>
+        <button class="dice-quick-btn" data-die="d12">d12</button>
+        <button class="dice-quick-btn" data-die="d20">d20</button>
+        <button class="dice-quick-btn" data-die="d100">d100</button>
+      </div>
+
+      <!-- Advantage / Disadvantage -->
+      <div class="dice-adv-row">
+        <button id="dice-adv-btn" class="dice-adv-btn" title="Roll 2d20, keep highest">⬆ Advantage</button>
+        <button id="dice-disadv-btn" class="dice-adv-btn dice-adv-btn--disadv" title="Roll 2d20, keep lowest">⬇ Disadvantage</button>
+      </div>
+
+      <!-- Custom Notation Input -->
+      <div class="dice-custom-row">
+        <input
+          type="text"
+          id="dice-custom-input"
+          class="dice-custom-input"
+          placeholder="e.g. 2d6+3, 4d6kh3, 1d20+5"
+          aria-label="Custom dice notation"
+        />
+        <button id="dice-custom-roll" class="dice-roll-btn">Roll</button>
+      </div>
+
+      <!-- Result Display -->
+      <div id="dice-result" class="dice-result hidden">
+        <div id="dice-result-label" class="dice-result-label"></div>
+        <div id="dice-result-individual" class="dice-result-individual"></div>
+        <div id="dice-result-total" class="dice-result-total"></div>
+      </div>
+
+      <!-- Roll History -->
+      <div class="dice-history-header">
+        <span class="dice-history-title">History</span>
+        <button id="dice-clear-history" class="dice-clear-btn" title="Clear History">Clear</button>
+      </div>
+      <ul id="dice-history" class="dice-history-list"></ul>
+    </div>
+  </div>
+
+
+  <!-- Dice Roller -->
+<!-- ============================================================
+     DICE ROLLER — Floating button + panel overlay
+     Add this block just before </body> in index.html
+     ============================================================ -->
+
+<!-- Floating trigger button -->
+<button id="dice-roller-fab" class="dice-fab" title="Dice Roller" aria-label="Open Dice Roller">🎲</button>
+
+<!-- Dice Roller Panel -->
+<div id="dice-roller-overlay" class="dice-overlay hidden" aria-hidden="true">
+  <div class="dice-panel" role="dialog" aria-label="Dice Roller">
+
+    <!-- Panel Header -->
+    <div class="dice-panel-header">
+      <h2 class="dice-panel-title">🎲 Dice Roller</h2>
+      <button id="dice-roller-close" class="dice-close-btn" title="Close" aria-label="Close Dice Roller">&times;</button>
+    </div>
+
+    <!-- Quick-Roll Buttons -->
+    <div class="dice-quick-row">
+      <button class="dice-quick-btn" data-die="d4">d4</button>
+      <button class="dice-quick-btn" data-die="d6">d6</button>
+      <button class="dice-quick-btn" data-die="d8">d8</button>
+      <button class="dice-quick-btn" data-die="d10">d10</button>
+      <button class="dice-quick-btn" data-die="d12">d12</button>
+      <button class="dice-quick-btn" data-die="d20">d20</button>
+      <button class="dice-quick-btn" data-die="d100">d100</button>
+    </div>
+
+    <!-- Advantage / Disadvantage -->
+    <div class="dice-adv-row">
+      <button id="dice-adv-btn" class="dice-adv-btn" title="Roll 2d20, keep highest">⬆ Advantage</button>
+      <button id="dice-disadv-btn" class="dice-adv-btn dice-adv-btn--disadv" title="Roll 2d20, keep lowest">⬇ Disadvantage</button>
+    </div>
+
+    <!-- Custom Notation Input -->
+    <div class="dice-custom-row">
+      <input
+        type="text"
+        id="dice-custom-input"
+        class="dice-custom-input"
+        placeholder="e.g. 2d6+3, 4d6kh3, 1d20+5"
+        aria-label="Custom dice notation"
+      />
+      <button id="dice-custom-roll" class="dice-roll-btn">Roll</button>
+    </div>
+
+    <!-- Result Display -->
+    <div id="dice-result" class="dice-result hidden">
+      <div id="dice-result-label" class="dice-result-label"></div>
+      <div id="dice-result-individual" class="dice-result-individual"></div>
+      <div id="dice-result-total" class="dice-result-total"></div>
+    </div>
+
+    <!-- Roll History -->
+    <div class="dice-history-header">
+      <span class="dice-history-title">History</span>
+      <button id="dice-clear-history" class="dice-clear-btn" title="Clear History">Clear</button>
+    </div>
+    <ul id="dice-history" class="dice-history-list"></ul>
+  </div>
+</div>
+
+
+  <!-- Character Manager Modal -->
+<!-- Multiple Character Save Slots -->
+<div id="character-manager-overlay" class="char-mgr-overlay hidden" aria-hidden="true">
+  <div class="char-mgr-panel" role="dialog" aria-label="Character Manager">
+    <div class="char-mgr-header">
+      <h2 class="char-mgr-title">📋 Character Manager</h2>
+      <button class="char-mgr-close" onclick="closeCharacterManager()" title="Close">&times;</button>
+    </div>
+    <div class="char-mgr-body">
+      <div class="char-mgr-actions-top">
+        <button class="action-btn" onclick="saveCharacterSlot()">💾 Save Current</button>
+      </div>
+      <div class="char-mgr-list" id="char-mgr-list">
+        <p class="char-mgr-empty" id="char-mgr-empty">No saved characters yet.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Trigger button (place in toolbar-actions or wherever appropriate) -->
+<!-- <button class="action-btn" onclick="openCharacterManager()" title="Character Manager">📋 Characters</button> -->
+
+
+  <!-- Point Buy Modal -->
+<!-- Point Buy / Standard Array Modal -->
+<div id="pointbuy-overlay" class="pointbuy-overlay hidden" aria-hidden="true">
+  <div class="pointbuy-panel" role="dialog" aria-label="Ability Score Generator">
+    <div class="pointbuy-header">
+      <h2 class="pointbuy-title">🎯 Ability Score Generator</h2>
+      <button class="pointbuy-close" onclick="closePointBuy()" title="Close">&times;</button>
+    </div>
+
+    <div class="pointbuy-tabs">
+      <button class="pointbuy-tab active" data-pbtab="pointbuy" onclick="switchPBTab('pointbuy')">Point Buy</button>
+      <button class="pointbuy-tab" data-pbtab="standard" onclick="switchPBTab('standard')">Standard Array</button>
+    </div>
+
+    <!-- Point Buy Tab -->
+    <div class="pointbuy-content" id="pb-tab-pointbuy">
+      <div class="pb-points-remaining">
+        Points Remaining: <strong id="pb-points-left">27</strong> / 27
+      </div>
+      <div class="pb-cost-reference">
+        <span class="pb-cost-title">Cost Table:</span>
+        <span>8→0</span> <span>9→1</span> <span>10→2</span> <span>11→3</span>
+        <span>12→4</span> <span>13→5</span> <span>14→7</span> <span>15→9</span>
+      </div>
+      <div class="pb-abilities">
+        <div class="pb-ability-row" data-pb-ability="str">
+          <span class="pb-ab-name">STR</span>
+          <button class="pb-minus" onclick="pbAdjust('str', -1)">−</button>
+          <span class="pb-ab-score" id="pb-str">8</span>
+          <button class="pb-plus" onclick="pbAdjust('str', 1)">+</button>
+          <span class="pb-ab-cost" id="pb-cost-str">(0 pts)</span>
+        </div>
+        <div class="pb-ability-row" data-pb-ability="dex">
+          <span class="pb-ab-name">DEX</span>
+          <button class="pb-minus" onclick="pbAdjust('dex', -1)">−</button>
+          <span class="pb-ab-score" id="pb-dex">8</span>
+          <button class="pb-plus" onclick="pbAdjust('dex', 1)">+</button>
+          <span class="pb-ab-cost" id="pb-cost-dex">(0 pts)</span>
+        </div>
+        <div class="pb-ability-row" data-pb-ability="con">
+          <span class="pb-ab-name">CON</span>
+          <button class="pb-minus" onclick="pbAdjust('con', -1)">−</button>
+          <span class="pb-ab-score" id="pb-con">8</span>
+          <button class="pb-plus" onclick="pbAdjust('con', 1)">+</button>
+          <span class="pb-ab-cost" id="pb-cost-con">(0 pts)</span>
+        </div>
+        <div class="pb-ability-row" data-pb-ability="int">
+          <span class="pb-ab-name">INT</span>
+          <button class="pb-minus" onclick="pbAdjust('int', -1)">−</button>
+          <span class="pb-ab-score" id="pb-int">8</span>
+          <button class="pb-plus" onclick="pbAdjust('int', 1)">+</button>
+          <span class="pb-ab-cost" id="pb-cost-int">(0 pts)</span>
+        </div>
+        <div class="pb-ability-row" data-pb-ability="wis">
+          <span class="pb-ab-name">WIS</span>
+          <button class="pb-minus" onclick="pbAdjust('wis', -1)">−</button>
+          <span class="pb-ab-score" id="pb-wis">8</span>
+          <button class="pb-plus" onclick="pbAdjust('wis', 1)">+</button>
+          <span class="pb-ab-cost" id="pb-cost-wis">(0 pts)</span>
+        </div>
+        <div class="pb-ability-row" data-pb-ability="cha">
+          <span class="pb-ab-name">CHA</span>
+          <button class="pb-minus" onclick="pbAdjust('cha', -1)">−</button>
+          <span class="pb-ab-score" id="pb-cha">8</span>
+          <button class="pb-plus" onclick="pbAdjust('cha', 1)">+</button>
+          <span class="pb-ab-cost" id="pb-cost-cha">(0 pts)</span>
+        </div>
+      </div>
+      <div class="pb-apply-row">
+        <button class="pb-reset-btn" onclick="pbReset()">🔄 Reset</button>
+        <button class="pb-apply-btn" onclick="pbApply()">✅ Apply Scores</button>
+      </div>
+    </div>
+
+    <!-- Standard Array Tab -->
+    <div class="pointbuy-content hidden" id="pb-tab-standard">
+      <p class="sa-instructions">Assign each value to an ability score. Each value can only be used once.</p>
+      <div class="sa-values" id="sa-values">
+        <span class="sa-value" data-sa-val="15">15</span>
+        <span class="sa-value" data-sa-val="14">14</span>
+        <span class="sa-value" data-sa-val="13">13</span>
+        <span class="sa-value" data-sa-val="12">12</span>
+        <span class="sa-value" data-sa-val="10">10</span>
+        <span class="sa-value" data-sa-val="8">8</span>
+      </div>
+      <div class="sa-assignments">
+        <div class="sa-assign-row">
+          <span class="sa-ab-name">STR</span>
+          <select class="sa-select" id="sa-str" onchange="saValidate()">
+            <option value="">—</option>
+            <option value="15">15</option><option value="14">14</option><option value="13">13</option>
+            <option value="12">12</option><option value="10">10</option><option value="8">8</option>
+          </select>
+        </div>
+        <div class="sa-assign-row">
+          <span class="sa-ab-name">DEX</span>
+          <select class="sa-select" id="sa-dex" onchange="saValidate()">
+            <option value="">—</option>
+            <option value="15">15</option><option value="14">14</option><option value="13">13</option>
+            <option value="12">12</option><option value="10">10</option><option value="8">8</option>
+          </select>
+        </div>
+        <div class="sa-assign-row">
+          <span class="sa-ab-name">CON</span>
+          <select class="sa-select" id="sa-con" onchange="saValidate()">
+            <option value="">—</option>
+            <option value="15">15</option><option value="14">14</option><option value="13">13</option>
+            <option value="12">12</option><option value="10">10</option><option value="8">8</option>
+          </select>
+        </div>
+        <div class="sa-assign-row">
+          <span class="sa-ab-name">INT</span>
+          <select class="sa-select" id="sa-int" onchange="saValidate()">
+            <option value="">—</option>
+            <option value="15">15</option><option value="14">14</option><option value="13">13</option>
+            <option value="12">12</option><option value="10">10</option><option value="8">8</option>
+          </select>
+        </div>
+        <div class="sa-assign-row">
+          <span class="sa-ab-name">WIS</span>
+          <select class="sa-select" id="sa-wis" onchange="saValidate()">
+            <option value="">—</option>
+            <option value="15">15</option><option value="14">14</option><option value="13">13</option>
+            <option value="12">12</option><option value="10">10</option><option value="8">8</option>
+          </select>
+        </div>
+        <div class="sa-assign-row">
+          <span class="sa-ab-name">CHA</span>
+          <select class="sa-select" id="sa-cha" onchange="saValidate()">
+            <option value="">—</option>
+            <option value="15">15</option><option value="14">14</option><option value="13">13</option>
+            <option value="12">12</option><option value="10">10</option><option value="8">8</option>
+          </select>
+        </div>
+      </div>
+      <div class="sa-status" id="sa-status"></div>
+      <div class="pb-apply-row">
+        <button class="pb-reset-btn" onclick="saReset()">🔄 Reset</button>
+        <button class="pb-apply-btn" id="sa-apply-btn" onclick="saApply()" disabled>✅ Apply Scores</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Trigger button (place in toolbar or ability scores header) -->
+<!-- <button class="action-btn" onclick="openPointBuy()" title="Point Buy / Standard Array">🎯 Point Buy</button> -->
+
 
   <script src="script.js"></script>
 </body>

@@ -1,0 +1,69 @@
+/* ---------- Rest Buttons ---------- */
+.rest-section {
+  padding: 0.6rem 0.8rem;
+}
+
+.rest-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.rest-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.5rem 0.6rem;
+  border: 2px solid var(--border-dark);
+  border-radius: var(--radius);
+  background: var(--bg-input);
+  cursor: pointer;
+  transition: all var(--transition);
+  font-family: var(--font-body);
+}
+
+.rest-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px var(--shadow);
+}
+
+.rest-short {
+  border-color: var(--accent-gold);
+}
+
+.rest-short:hover {
+  background: rgba(200, 151, 26, 0.1);
+}
+
+.rest-long {
+  border-color: #4a6fa5;
+}
+
+.rest-long:hover {
+  background: rgba(74, 111, 165, 0.1);
+}
+
+.rest-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.rest-label {
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.rest-desc {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Active press effect */
+.rest-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}

@@ -1,0 +1,42 @@
+<!-- Exhaustion Tracker -->
+<div class="section exhaustion-section">
+  <h3 class="section-title">⚡ Exhaustion</h3>
+  <div class="exhaustion-levels">
+    <label class="exhaustion-level level-1" title="Disadvantage on ability checks">
+      <input type="checkbox" data-key="exhaustion1" />
+      <span class="exhaustion-mark"></span>
+      <span class="exhaustion-num">1</span>
+      <span class="exhaustion-effect">Disadvantage on ability checks</span>
+    </label>
+    <label class="exhaustion-level level-2" title="Speed halved">
+      <input type="checkbox" data-key="exhaustion2" />
+      <span class="exhaustion-mark"></span>
+      <span class="exhaustion-num">2</span>
+      <span class="exhaustion-effect">Speed halved</span>
+    </label>
+    <label class="exhaustion-level level-3" title="Disadvantage on attack rolls and saving throws">
+      <input type="checkbox" data-key="exhaustion3" />
+      <span class="exhaustion-mark"></span>
+      <span class="exhaustion-num">3</span>
+      <span class="exhaustion-effect">Disadvantage on attacks &amp; saves</span>
+    </label>
+    <label class="exhaustion-level level-4" title="Hit point maximum halved">
+      <input type="checkbox" data-key="exhaustion4" />
+      <span class="exhaustion-mark"></span>
+      <span class="exhaustion-num">4</span>
+      <span class="exhaustion-effect">HP maximum halved</span>
+    </label>
+    <label class="exhaustion-level level-5" title="Speed reduced to 0">
+      <input type="checkbox" data-key="exhaustion5" />
+      <span class="exhaustion-mark"></span>
+      <span class="exhaustion-num">5</span>
+      <span class="exhaustion-effect">Speed reduced to 0</span>
+    </label>
+    <label class="exhaustion-level level-6" title="Death">
+      <input type="checkbox" data-key="exhaustion6" />
+      <span class="exhaustion-mark"></span>
+      <span class="exhaustion-num">6</span>
+      <span class="exhaustion-effect">💀 Death</span>
+    </label>
+  </div>
+</div>

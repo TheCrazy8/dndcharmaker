@@ -1,0 +1,145 @@
+/* ---------- Multiple Character Save Slots ---------- */
+
+const CHAR_MANIFEST_KEY = 'dnd5e_chars_manifest';
+const CHAR_DATA_PREFIX = 'dnd5e_chars_';
+
+function getCharManifest() {
+  try {
+    return JSON.parse(localStorage.getItem(CHAR_MANIFEST_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCharManifest(manifest) {
+  localStorage.setItem(CHAR_MANIFEST_KEY, JSON.stringify(manifest));
+}
+
+function openCharacterManager() {
+  const overlay = document.getElementById('character-manager-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('hidden');
+  overlay.setAttribute('aria-hidden', 'false');
+  renderCharacterList();
+}
+
+function closeCharacterManager() {
+  const overlay = document.getElementById('character-manager-overlay');
+  if (!overlay) return;
+  overlay.classList.add('hidden');
+  overlay.setAttribute('aria-hidden', 'true');
+}
+
+function renderCharacterList() {
+  const list = document.getElementById('char-mgr-list');
+  const empty = document.getElementById('char-mgr-empty');
+  const manifest = getCharManifest();
+
+  // Clear existing entries (keep the empty message)
+  list.querySelectorAll('.char-mgr-entry').forEach(el => el.remove());
+
+  if (manifest.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+
+  manifest.forEach((entry, index) => {
+    const div = document.createElement('div');
+    div.className = 'char-mgr-entry';
+    div.innerHTML = `
+      <div class="char-mgr-info">
+        <span class="char-mgr-name">${escapeHtml(entry.name || 'Unnamed')}</span>
+        <span class="char-mgr-meta">${escapeHtml(entry.className || '—')} · Lv ${entry.level || 1}</span>
+        <span class="char-mgr-date">Saved: ${entry.savedAt || '—'}</span>
+      </div>
+      <div class="char-mgr-entry-actions">
+        <button class="char-mgr-btn load" onclick="loadCharacterSlot(${index})" title="Load">📂 Load</button>
+        <button class="char-mgr-btn rename" onclick="renameCharacterSlot(${index})" title="Rename">✏️</button>
+        <button class="char-mgr-btn delete" onclick="deleteCharacterSlot(${index})" title="Delete">🗑️</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function saveCharacterSlot() {
+  const data = collectAllData();
+  const name = data.charName || 'Unnamed Character';
+  const className = data.mainClass || '';
+  const level = data.level || 1;
+
+  const manifest = getCharManifest();
+  const slotId = 'slot_' + Date.now();
+  const now = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+  manifest.push({
+    id: slotId,
+    name: name,
+    className: className,
+    level: level,
+    savedAt: now
+  });
+
+  saveCharManifest(manifest);
+  localStorage.setItem(CHAR_DATA_PREFIX + slotId, JSON.stringify(data));
+
+  renderCharacterList();
+}
+
+function loadCharacterSlot(index) {
+  const manifest = getCharManifest();
+  if (index < 0 || index >= manifest.length) return;
+
+  const entry = manifest[index];
+  const raw = localStorage.getItem(CHAR_DATA_PREFIX + entry.id);
+  if (!raw) {
+    alert('Character data not found. It may have been deleted.');
+    return;
+  }
+
+  if (!confirm(`Load "${entry.name}"? This will replace your current character data.`)) return;
+
+  try {
+    const data = JSON.parse(raw);
+    applyData(data);
+    recalcAll();
+    saveToStorage();
+    closeCharacterManager();
+  } catch {
+    alert('Failed to load character data.');
+  }
+}
+
+function deleteCharacterSlot(index) {
+  const manifest = getCharManifest();
+  if (index < 0 || index >= manifest.length) return;
+
+  const entry = manifest[index];
+  if (!confirm(`Delete saved character "${entry.name}"? This cannot be undone.`)) return;
+
+  localStorage.removeItem(CHAR_DATA_PREFIX + entry.id);
+  manifest.splice(index, 1);
+  saveCharManifest(manifest);
+  renderCharacterList();
+}
+
+function renameCharacterSlot(index) {
+  const manifest = getCharManifest();
+  if (index < 0 || index >= manifest.length) return;
+
+  const entry = manifest[index];
+  const newName = prompt('Enter new name:', entry.name);
+  if (newName === null || newName.trim() === '') return;
+
+  entry.name = newName.trim();
+  saveCharManifest(manifest);
+  renderCharacterList();
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}

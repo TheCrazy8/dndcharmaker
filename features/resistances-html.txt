@@ -1,0 +1,18 @@
+<!-- Resistances, Immunities & Vulnerabilities -->
+<div class="section resistances-section">
+  <h3 class="section-title">🛡️ Resistances, Immunities &amp; Vulnerabilities</h3>
+  <div class="resistances-grid">
+    <div class="field-group">
+      <label for="resistances">Resistances</label>
+      <textarea id="resistances" data-key="resistances" rows="3" placeholder="e.g. Fire, Cold, Necrotic…"></textarea>
+    </div>
+    <div class="field-group">
+      <label for="immunities">Immunities</label>
+      <textarea id="immunities" data-key="immunities" rows="3" placeholder="e.g. Poison, Psychic…"></textarea>
+    </div>
+    <div class="field-group">
+      <label for="vulnerabilities">Vulnerabilities</label>
+      <textarea id="vulnerabilities" data-key="vulnerabilities" rows="3" placeholder="e.g. Radiant, Thunder…"></textarea>
+    </div>
+  </div>
+</div>
