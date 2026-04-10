@@ -1,0 +1,923 @@
+/* ============================================================
+   D&D 5e Character Sheet — style.css
+   ============================================================ */
+
+/* ---------- Google Font import fallback handled by HTML ---------- */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English&display=swap');
+
+/* ---------- CSS Custom Properties (Light Mode) ---------- */
+:root {
+  --bg-page:      #f5efe0;
+  --bg-section:   #fdf8ee;
+  --bg-header:    #3b1f0a;
+  --bg-input:     #fffdf5;
+  --bg-table-alt: #f0e8d0;
+  --bg-ability:   #4a2c0a;
+
+  --text-primary:  #2c1a0a;
+  --text-heading:  #5c2e00;
+  --text-inverse:  #f5efe0;
+  --text-muted:    #7a5c3a;
+  --text-mod:      #1a3a6a;
+
+  --border-dark:   #8b5e2a;
+  --border-medium: #c49a6c;
+  --border-light:  #ddc89a;
+
+  --accent-red:    #8b1a1a;
+  --accent-green:  #1a5c1a;
+  --accent-gold:   #c8971a;
+
+  --shadow:        rgba(60, 30, 10, 0.25);
+  --shadow-inset:  rgba(60, 30, 10, 0.15);
+
+  --tab-bg:        #5c3010;
+  --tab-active:    #c8971a;
+  --tab-text:      #f5efe0;
+
+  --font-heading:  'Cinzel', 'Georgia', serif;
+  --font-body:     'IM Fell English', 'Georgia', serif;
+
+  --radius:        6px;
+  --radius-lg:     10px;
+  --transition:    0.2s ease;
+}
+
+/* ---------- Dark Mode ---------- */
+body.dark-mode {
+  --bg-page:      #1a1008;
+  --bg-section:   #231608;
+  --bg-header:    #0d0804;
+  --bg-input:     #2a1e0c;
+  --bg-table-alt: #2e1e0c;
+  --bg-ability:   #0d0804;
+
+  --text-primary:  #e8d8b8;
+  --text-heading:  #d4a850;
+  --text-inverse:  #e8d8b8;
+  --text-muted:    #9a7a4a;
+  --text-mod:      #7aaedc;
+
+  --border-dark:   #6a4020;
+  --border-medium: #8a5c30;
+  --border-light:  #5a3c18;
+
+  --shadow:        rgba(0, 0, 0, 0.6);
+  --shadow-inset:  rgba(0, 0, 0, 0.4);
+
+  --tab-bg:        #0d0804;
+  --tab-active:    #c8971a;
+}
+
+/* ---------- Reset & Base ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 14px; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  min-height: 100vh;
+  transition: background var(--transition), color var(--transition);
+}
+
+/* ---------- Toolbar ---------- */
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  background: var(--bg-header);
+  border-bottom: 3px solid var(--accent-gold);
+  flex-wrap: wrap;
+}
+
+.toolbar-title {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  color: var(--accent-gold);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-right: 0.5rem;
+  white-space: nowrap;
+}
+
+.tab-nav {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  padding: 0.35rem 0.7rem;
+  background: var(--tab-bg);
+  color: var(--tab-text);
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius) var(--radius) 0 0;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  letter-spacing: 0.03em;
+}
+
+.tab-btn:hover { background: #8b5e2a; }
+.tab-btn.active { background: var(--tab-active); color: #1a0a00; font-weight: 700; }
+
+.toolbar-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  padding: 0.3rem 0.55rem;
+  background: #5c3010;
+  color: #f5efe0;
+  border: 1px solid var(--accent-gold);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background var(--transition);
+  white-space: nowrap;
+}
+
+.action-btn:hover { background: var(--accent-gold); color: #1a0a00; }
+
+/* ---------- Sheet Container ---------- */
+.sheet-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* ---------- Pages ---------- */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ---------- Sections ---------- */
+.section {
+  background: var(--bg-section);
+  border: 2px solid var(--border-dark);
+  border-radius: var(--radius-lg);
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.6rem;
+  box-shadow: 0 2px 6px var(--shadow);
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.section-title {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  color: var(--text-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border-medium);
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.2rem;
+}
+
+/* ---------- Header Section ---------- */
+.header-section { margin-bottom: 0.6rem; }
+
+.header-grid {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 1.2fr 1.3fr 1.3fr 0.6fr 1fr;
+  gap: 0.5rem;
+  align-items: end;
+}
+
+.header-grid .span-2 { grid-column: span 2; }
+
+/* ---------- Field Groups ---------- */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.field-group label {
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.field-group.narrow input { max-width: 70px; }
+
+/* ---------- Inputs, Selects, Textareas ---------- */
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+  width: 100%;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  padding: 0.3rem 0.4rem;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 2px rgba(200, 151, 26, 0.25);
+}
+
+.large-input { font-size: 1rem; font-weight: 600; }
+
+textarea { resize: vertical; line-height: 1.5; }
+.large-textarea { min-height: 120px; }
+
+select option { background: var(--bg-input); color: var(--text-primary); }
+
+/* ---------- Combat Section ---------- */
+.combat-section { margin-bottom: 0.6rem; }
+
+.combat-grid {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.combat-box {
+  flex: 1;
+  min-width: 100px;
+  border: 2px solid var(--border-dark);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.5rem;
+  text-align: center;
+  background: var(--bg-section);
+}
+
+.combat-label {
+  font-family: var(--font-heading);
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.25rem;
+}
+
+.combat-value {
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  width: 100%;
+  text-align: center;
+  border: none;
+  background: transparent;
+}
+
+input.combat-value {
+  border-bottom: 1px solid var(--border-medium);
+}
+
+.combat-value-input {
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.combat-value.read-only {
+  border: none;
+  background: none;
+  cursor: default;
+  font-size: 1.5rem;
+  display: block;
+  padding: 0.1rem 0;
+}
+
+/* Hit Points */
+.hp-box { flex: 2; min-width: 200px; }
+.hd-box { flex: 1.5; min-width: 160px; }
+.death-box { flex: 2; min-width: 200px; }
+
+.hp-row { display: flex; gap: 0.4rem; justify-content: center; }
+
+.hp-field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.hp-field label {
+  font-family: var(--font-heading);
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.hp-field input { width: 70px; text-align: center; font-size: 1rem; }
+
+/* Death Saves */
+.death-saves { display: flex; flex-direction: column; gap: 0.3rem; }
+.death-row { display: flex; align-items: center; gap: 0.4rem; justify-content: center; }
+.death-label { font-family: var(--font-heading); font-size: 0.6rem; text-transform: uppercase; min-width: 58px; text-align: right; }
+.death-label.success { color: var(--accent-green); }
+.death-label.failure { color: var(--accent-red); }
+.death-checks { display: flex; gap: 0.3rem; }
+
+/* Shield checkbox */
+.shield-box { flex: 0 0 70px; min-width: 70px; }
+
+/* ---------- Main Columns ---------- */
+.main-columns {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 0.6rem;
+  align-items: start;
+}
+
+/* ---------- Proficiency Bonus ---------- */
+.prof-section { text-align: center; }
+
+.prof-circle {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 3px solid var(--border-dark);
+  background: var(--bg-ability);
+  color: var(--text-inverse);
+  margin: 0 auto;
+}
+
+.prof-label {
+  font-family: var(--font-heading);
+  font-size: 0.52rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-gold);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.prof-value {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #fff;
+  margin-top: 2px;
+}
+
+/* ---------- Ability Blocks ---------- */
+.abilities-section { padding: 0.4rem; }
+
+.ability-block {
+  border: 2px solid var(--border-dark);
+  border-radius: var(--radius);
+  margin-bottom: 0.4rem;
+  overflow: hidden;
+}
+
+.ability-header {
+  background: var(--bg-ability);
+  padding: 0.2rem 0.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.ability-name {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  letter-spacing: 0.05em;
+}
+
+.ability-full {
+  font-family: var(--font-heading);
+  font-size: 0.6rem;
+  color: #c8b090;
+  text-transform: uppercase;
+}
+
+.ability-body { padding: 0.4rem 0.5rem; }
+
+.score-mod-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.score-col, .mod-col, .save-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.score-col label, .mod-col label, .save-col label {
+  font-family: var(--font-heading);
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.score-col input { width: 52px; text-align: center; font-size: 1rem; font-weight: 600; }
+
+.mod-display {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-mod);
+  width: 52px;
+  text-align: center;
+  border-bottom: 1px solid var(--border-medium);
+  padding: 0.1rem 0;
+}
+
+.save-row { display: flex; align-items: center; gap: 0.3rem; }
+.save-mod {
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-mod);
+}
+
+/* Skills */
+.skills-list { display: flex; flex-direction: column; gap: 2px; }
+
+.skill-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.skill-mod {
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-mod);
+  min-width: 28px;
+  text-align: right;
+}
+
+.skill-name {
+  font-size: 0.78rem;
+  color: var(--text-primary);
+}
+
+/* ---------- Checkboxes ---------- */
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+}
+
+.checkbox-label input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.check-mark {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-dark);
+  border-radius: 3px;
+  background: var(--bg-input);
+  position: relative;
+  flex-shrink: 0;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.check-mark.small { width: 13px; height: 13px; }
+.check-mark.fail { border-color: var(--accent-red); }
+
+.checkbox-label input[type="checkbox"]:checked + .check-mark {
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+}
+
+.checkbox-label input[type="checkbox"]:checked + .check-mark::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 0px;
+  width: 5px;
+  height: 9px;
+  border: 2px solid white;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+.check-mark.small::after { left: 2px; top: 0; width: 4px; height: 7px; }
+
+.checkbox-label input[type="checkbox"]:checked + .check-mark.fail {
+  background: var(--accent-red);
+  border-color: var(--accent-red);
+}
+
+.inline-check-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.inline-check-label input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Large checkbox */
+.large-check .check-mark { width: 28px; height: 28px; border-radius: 4px; }
+.large-check .check-mark::after { left: 7px !important; top: 2px !important; width: 8px !important; height: 14px !important; }
+
+/* ---------- Heroic Inspiration ---------- */
+.inspiration-section { text-align: center; }
+
+/* ---------- Proficiencies ---------- */
+.armor-training {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.sub-label {
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.mt-sm { margin-top: 0.4rem; }
+
+/* ---------- Secondary Combat Stats ---------- */
+.secondary-combat-grid {
+  display: grid;
+  grid-template-columns: 80px 1fr 120px 130px;
+  gap: 0.5rem;
+  align-items: start;
+}
+
+.speed-box { }
+.speed-fields {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.3rem;
+}
+
+.speed-field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.speed-field label {
+  font-family: var(--font-heading);
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.speed-field input { width: 55px; text-align: center; }
+
+/* ---------- Two-col section ---------- */
+.two-col-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.two-col-section .section { margin-bottom: 0; }
+
+/* ---------- Tables ---------- */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--border-medium);
+  font-size: 0.82rem;
+  vertical-align: middle;
+}
+
+th {
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--bg-ability);
+  color: var(--accent-gold);
+  white-space: nowrap;
+}
+
+tbody tr:nth-child(even) { background: var(--bg-table-alt); }
+
+tbody td input[type="text"],
+tbody td input[type="number"] {
+  border: none;
+  background: transparent;
+  padding: 0.1rem 0.2rem;
+  font-size: 0.82rem;
+  width: 100%;
+}
+
+/* Weapons table */
+.weapons-table th:nth-child(1) { width: 25%; }
+.weapons-table th:nth-child(2) { width: 18%; }
+.weapons-table th:nth-child(3) { width: 25%; }
+.weapons-table th:nth-child(4) { width: 32%; }
+
+/* Spell slots table */
+.spell-slots-table { max-width: 400px; }
+.spell-slots-table td { text-align: center; }
+
+/* Diamond-style expended cells */
+.spell-slots-table .level-label {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  color: var(--text-heading);
+  font-weight: 600;
+}
+
+.slot-diamonds {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.slot-diamond {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border-dark);
+  transform: rotate(45deg);
+  background: var(--bg-input);
+  cursor: pointer;
+  transition: background var(--transition);
+  flex-shrink: 0;
+}
+
+.slot-diamond.expended {
+  background: var(--accent-red);
+  border-color: var(--accent-red);
+}
+
+/* Spells table */
+.spells-wrapper { max-height: 500px; overflow-y: auto; }
+.spells-table th:nth-child(1) { width: 5%; }
+.spells-table th:nth-child(2) { width: 22%; }
+.spells-table th:nth-child(3) { width: 14%; }
+.spells-table th:nth-child(4) { width: 10%; }
+.spells-table th:nth-child(5),
+.spells-table th:nth-child(6),
+.spells-table th:nth-child(7) { width: 5%; }
+.spells-table th:nth-child(8) { width: auto; }
+
+/* Tracker table */
+.tracker-table { width: 100%; }
+.tracker-table td { padding: 0.3rem 0.5rem; }
+.tracker-label {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+  width: 80px;
+}
+
+/* ---------- Page Layout ---------- */
+.page-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  align-items: start;
+}
+
+.page-col { display: flex; flex-direction: column; gap: 0.6rem; }
+.page-col .section { margin-bottom: 0; }
+
+/* ---------- Sanity / Honor ---------- */
+.sanity-honor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.sanity-honor-box { border: 1px solid var(--border-medium); border-radius: var(--radius); padding: 0.4rem; }
+.sanity-honor-box h4 {
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  color: var(--text-heading);
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+}
+
+.score-mod-pair {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.score-mod-pair > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+
+.score-mod-pair label {
+  font-family: var(--font-heading);
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.score-mod-pair input { width: 60px; text-align: center; }
+
+/* ---------- Page 3: Spellcasting ---------- */
+.spell-col { }
+.details-col { }
+
+.spell-header-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
+  gap: 0.5rem;
+  align-items: end;
+}
+
+.field-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ---------- Attunement ---------- */
+.attunement-section {
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--border-medium);
+  padding-top: 0.4rem;
+}
+
+.attunement-section h4 {
+  font-family: var(--font-heading);
+  font-size: 0.7rem;
+  color: var(--text-heading);
+  text-transform: uppercase;
+  margin-bottom: 0.3rem;
+}
+
+.attunement-slots { display: flex; flex-direction: column; gap: 0.3rem; }
+
+.attune-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: default;
+}
+
+.attune-row input[type="text"] { flex: 1; }
+
+/* ---------- Coins ---------- */
+.coins-grid {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.coin-field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 60px;
+}
+
+.coin-field label {
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 3px;
+  color: #fff;
+}
+
+.coin-field input { text-align: center; }
+
+.cp label { background: #7a6a5a; }
+.sp label { background: #8a8a9a; }
+.ep label { background: #9a8a60; }
+.gp label { background: #b8980a; }
+.pp label { background: #7a5ab8; }
+
+/* ---------- Notes Page ---------- */
+.notes-section { height: calc(100vh - 140px); display: flex; flex-direction: column; }
+.notes-textarea {
+  flex: 1;
+  resize: none;
+  min-height: 500px;
+  font-size: 0.95rem;
+}
+
+/* ---------- Spellcasting page column widths ---------- */
+.page-columns.spells-page { grid-template-columns: 3fr 2fr; }
+#page3 .page-columns { grid-template-columns: 3fr 2fr; }
+
+/* ---------- Print Styles ---------- */
+@media print {
+  .toolbar { display: none !important; }
+  body { background: white; }
+
+  .page { display: none !important; }
+  .page.active { display: block !important; }
+
+  .sheet-container { max-width: 100%; padding: 0.5cm; }
+
+  .section {
+    border: 1px solid #999;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+
+  input, select, textarea {
+    border: none;
+    border-bottom: 1px solid #999;
+    background: transparent;
+    color: #000;
+  }
+
+  .mod-display, .combat-value, .save-mod, .skill-mod, .prof-value {
+    color: #000;
+  }
+
+  .toolbar-actions, .tab-nav { display: none; }
+  .two-col-section { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .main-columns { grid-template-columns: 1fr; }
+  .header-grid { grid-template-columns: 1fr 1fr; }
+  .header-grid .span-2 { grid-column: span 2; }
+  .secondary-combat-grid { grid-template-columns: 1fr 1fr; }
+  .page-columns { grid-template-columns: 1fr; }
+  #page3 .page-columns { grid-template-columns: 1fr; }
+  .spell-header-grid { grid-template-columns: 1fr 1fr; }
+  .two-col-section { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  .toolbar { flex-direction: column; align-items: flex-start; }
+  .toolbar-actions { margin-left: 0; }
+  html { font-size: 13px; }
+  .combat-grid { flex-direction: column; }
+}
+
+/* ---------- Scrollbar Styling ---------- */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-page); }
+::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-gold); }
+
+/* ---------- Focus Visible ---------- */
+:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+}
+
+/* ---------- Flex grow helper ---------- */
+.flex-grow { flex: 1; }
+
+/* ---------- Weapon section small tweak ---------- */
+.weapons-section .table-wrapper { overflow-x: auto; }
