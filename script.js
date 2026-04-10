@@ -637,7 +637,7 @@ function diceExecuteRoll(notation, labelOverride) {
   const flickerInterval = setInterval(() => {
     totalEl.textContent = diceRandomFlicker(parsed);
     flickerCount++;
-    if (flickerCount >= Math.floor(DICE_ROLL_ANIM_MS / 50)) {
+    if (flickerCount > Math.floor(DICE_ROLL_ANIM_MS / 50)) {
       clearInterval(flickerInterval);
       totalEl.classList.remove('rolling');
       diceFinalize(parsed, label, notation);
@@ -749,7 +749,6 @@ function diceParse(notation) {
         sides,
         keep: keepNum,
         keepDir,
-        sign,
       });
     } else if (/^\d+$/.test(clean)) {
       modifier += sign * parseInt(clean, 10);
