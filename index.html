@@ -891,6 +891,68 @@
 
   </main>
 
+  <!-- ============================================================ -->
+  <!-- DICE ROLLER — Floating button + panel overlay               -->
+  <!-- ============================================================ -->
+
+  <!-- Floating trigger button -->
+  <button id="dice-roller-fab" class="dice-fab" title="Dice Roller" aria-label="Open Dice Roller">🎲</button>
+
+  <!-- Dice Roller Panel -->
+  <div id="dice-roller-overlay" class="dice-overlay hidden" aria-hidden="true">
+    <div class="dice-panel" role="dialog" aria-label="Dice Roller">
+
+      <!-- Panel Header -->
+      <div class="dice-panel-header">
+        <h2 class="dice-panel-title">🎲 Dice Roller</h2>
+        <button id="dice-roller-close" class="dice-close-btn" title="Close" aria-label="Close Dice Roller">&times;</button>
+      </div>
+
+      <!-- Quick-Roll Buttons -->
+      <div class="dice-quick-row">
+        <button class="dice-quick-btn" data-die="d4">d4</button>
+        <button class="dice-quick-btn" data-die="d6">d6</button>
+        <button class="dice-quick-btn" data-die="d8">d8</button>
+        <button class="dice-quick-btn" data-die="d10">d10</button>
+        <button class="dice-quick-btn" data-die="d12">d12</button>
+        <button class="dice-quick-btn" data-die="d20">d20</button>
+        <button class="dice-quick-btn" data-die="d100">d100</button>
+      </div>
+
+      <!-- Advantage / Disadvantage -->
+      <div class="dice-adv-row">
+        <button id="dice-adv-btn" class="dice-adv-btn" title="Roll 2d20, keep highest">⬆ Advantage</button>
+        <button id="dice-disadv-btn" class="dice-adv-btn dice-adv-btn--disadv" title="Roll 2d20, keep lowest">⬇ Disadvantage</button>
+      </div>
+
+      <!-- Custom Notation Input -->
+      <div class="dice-custom-row">
+        <input
+          type="text"
+          id="dice-custom-input"
+          class="dice-custom-input"
+          placeholder="e.g. 2d6+3, 4d6kh3, 1d20+5"
+          aria-label="Custom dice notation"
+        />
+        <button id="dice-custom-roll" class="dice-roll-btn">Roll</button>
+      </div>
+
+      <!-- Result Display -->
+      <div id="dice-result" class="dice-result hidden">
+        <div id="dice-result-label" class="dice-result-label"></div>
+        <div id="dice-result-individual" class="dice-result-individual"></div>
+        <div id="dice-result-total" class="dice-result-total"></div>
+      </div>
+
+      <!-- Roll History -->
+      <div class="dice-history-header">
+        <span class="dice-history-title">History</span>
+        <button id="dice-clear-history" class="dice-clear-btn" title="Clear History">Clear</button>
+      </div>
+      <ul id="dice-history" class="dice-history-list"></ul>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
