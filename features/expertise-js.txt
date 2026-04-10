@@ -1,0 +1,128 @@
+/* ---------- Expertise Support (Double Proficiency) ----------
+ *
+ * Skill checkboxes cycle through 3 states on double-click:
+ *   - Not proficient (unchecked)
+ *   - Proficient (checked, normal style)
+ *   - Expertise (checked + data-expertise="true", double proficiency bonus)
+ *
+ * Integration: Call initExpertise() after DOM ready.
+ * The recalcAll() skill section should be updated with the logic below.
+ */
+
+function initExpertise() {
+  // Add double-click handler to all skill proficiency checkboxes
+  document.querySelectorAll('.skill-prof').forEach(checkbox => {
+    const label = checkbox.closest('.checkbox-label') || checkbox.parentElement;
+
+    label.addEventListener('dblclick', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      cycleSkillProficiency(checkbox);
+    });
+  });
+
+  // Load expertise state from storage
+  const data = loadRaw();
+  document.querySelectorAll('.skill-prof').forEach(checkbox => {
+    const key = checkbox.dataset.key;
+    if (data[key + 'Expertise']) {
+      checkbox.dataset.expertise = 'true';
+      updateExpertiseVisual(checkbox);
+    }
+  });
+}
+
+function cycleSkillProficiency(checkbox) {
+  const hasExpertise = checkbox.dataset.expertise === 'true';
+  const isProf = checkbox.checked;
+
+  if (!isProf) {
+    // Not proficient → Proficient
+    checkbox.checked = true;
+    checkbox.dataset.expertise = 'false';
+  } else if (!hasExpertise) {
+    // Proficient → Expertise
+    checkbox.dataset.expertise = 'true';
+  } else {
+    // Expertise → Not proficient
+    checkbox.checked = false;
+    checkbox.dataset.expertise = 'false';
+  }
+
+  updateExpertiseVisual(checkbox);
+  recalcAll();
+  saveExpertiseData();
+  saveToStorage();
+}
+
+function updateExpertiseVisual(checkbox) {
+  const mark = checkbox.nextElementSibling; // .check-mark
+  if (!mark) return;
+
+  if (checkbox.checked && checkbox.dataset.expertise === 'true') {
+    mark.classList.add('expertise');
+  } else {
+    mark.classList.remove('expertise');
+  }
+}
+
+function saveExpertiseData() {
+  const data = loadRaw();
+  document.querySelectorAll('.skill-prof').forEach(checkbox => {
+    const key = checkbox.dataset.key;
+    data[key + 'Expertise'] = checkbox.dataset.expertise === 'true';
+  });
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn('localStorage save failed:', e);
+  }
+}
+
+/* ---------- Updated Skill Calculation for recalcAll() ----------
+ *
+ * Replace the skill modifier calculation block in recalcAll() with this:
+ *
+ *   Object.keys(skillMap).forEach(key => {
+ *     const ab     = skillMap[key];
+ *     const checkbox = document.querySelector(`[data-key="${key}"]`);
+ *     const hasP   = checkbox ? checkbox.checked : false;
+ *     const hasExp = checkbox ? checkbox.dataset.expertise === 'true' : false;
+ *     const profMult = hasExp ? 2 : (hasP ? 1 : 0);
+ *     const modVal = mods[ab] + (profMult * pb);
+ *     const elId   = 'mod-' + skillIdMap[key];
+ *     const el     = document.getElementById(elId);
+ *     if (el) el.textContent = formatMod(modVal);
+ *
+ *     if (key === 'skillPerception') {
+ *       perceptionMod  = mods['wis'];
+ *       perceptionProf = hasP || hasExp;
+ *       perceptionExpertise = hasExp;
+ *     }
+ *   });
+ *
+ *   // Update passive perception to also account for expertise:
+ *   const ppMult = perceptionExpertise ? 2 : (perceptionProf ? 1 : 0);
+ *   if (ppEl) ppEl.textContent = 10 + perceptionMod + (ppMult * pb);
+ */
+
+/* CSS addition for expertise visual indicator */
+/*
+  .check-mark.expertise {
+    background: var(--accent-gold) !important;
+    border-color: var(--accent-gold) !important;
+  }
+
+  .check-mark.expertise::after {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 0;
+    width: 4px;
+    height: 7px;
+    border: 2px solid #1a0a00;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg);
+  }
+*/

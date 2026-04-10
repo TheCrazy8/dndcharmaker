@@ -1,0 +1,145 @@
+<!-- Point Buy / Standard Array Modal -->
+<div id="pointbuy-overlay" class="pointbuy-overlay hidden" aria-hidden="true">
+  <div class="pointbuy-panel" role="dialog" aria-label="Ability Score Generator">
+    <div class="pointbuy-header">
+      <h2 class="pointbuy-title">🎯 Ability Score Generator</h2>
+      <button class="pointbuy-close" onclick="closePointBuy()" title="Close">&times;</button>
+    </div>
+
+    <div class="pointbuy-tabs">
+      <button class="pointbuy-tab active" data-pbtab="pointbuy" onclick="switchPBTab('pointbuy')">Point Buy</button>
+      <button class="pointbuy-tab" data-pbtab="standard" onclick="switchPBTab('standard')">Standard Array</button>
+    </div>
+
+    <!-- Point Buy Tab -->
+    <div class="pointbuy-content" id="pb-tab-pointbuy">
+      <div class="pb-points-remaining">
+        Points Remaining: <strong id="pb-points-left">27</strong> / 27
+      </div>
+      <div class="pb-cost-reference">
+        <span class="pb-cost-title">Cost Table:</span>
+        <span>8→0</span> <span>9→1</span> <span>10→2</span> <span>11→3</span>
+        <span>12→4</span> <span>13→5</span> <span>14→7</span> <span>15→9</span>
+      </div>
+      <div class="pb-abilities">
+        <div class="pb-ability-row" data-pb-ability="str">
+          <span class="pb-ab-name">STR</span>
+          <button class="pb-minus" onclick="pbAdjust('str', -1)">−</button>
+          <span class="pb-ab-score" id="pb-str">8</span>
+          <button class="pb-plus" onclick="pbAdjust('str', 1)">+</button>
+          <span class="pb-ab-cost" id="pb-cost-str">(0 pts)</span>
+        </div>
+        <div class="pb-ability-row" data-pb-ability="dex">
+          <span class="pb-ab-name">DEX</span>
+          <button class="pb-minus" onclick="pbAdjust('dex', -1)">−</button>
+          <span class="pb-ab-score" id="pb-dex">8</span>
+          <button class="pb-plus" onclick="pbAdjust('dex', 1)">+</button>
+          <span class="pb-ab-cost" id="pb-cost-dex">(0 pts)</span>
+        </div>
+        <div class="pb-ability-row" data-pb-ability="con">
+          <span class="pb-ab-name">CON</span>
+          <button class="pb-minus" onclick="pbAdjust('con', -1)">−</button>
+          <span class="pb-ab-score" id="pb-con">8</span>
+          <button class="pb-plus" onclick="pbAdjust('con', 1)">+</button>
+          <span class="pb-ab-cost" id="pb-cost-con">(0 pts)</span>
+        </div>
+        <div class="pb-ability-row" data-pb-ability="int">
+          <span class="pb-ab-name">INT</span>
+          <button class="pb-minus" onclick="pbAdjust('int', -1)">−</button>
+          <span class="pb-ab-score" id="pb-int">8</span>
+          <button class="pb-plus" onclick="pbAdjust('int', 1)">+</button>
+          <span class="pb-ab-cost" id="pb-cost-int">(0 pts)</span>
+        </div>
+        <div class="pb-ability-row" data-pb-ability="wis">
+          <span class="pb-ab-name">WIS</span>
+          <button class="pb-minus" onclick="pbAdjust('wis', -1)">−</button>
+          <span class="pb-ab-score" id="pb-wis">8</span>
+          <button class="pb-plus" onclick="pbAdjust('wis', 1)">+</button>
+          <span class="pb-ab-cost" id="pb-cost-wis">(0 pts)</span>
+        </div>
+        <div class="pb-ability-row" data-pb-ability="cha">
+          <span class="pb-ab-name">CHA</span>
+          <button class="pb-minus" onclick="pbAdjust('cha', -1)">−</button>
+          <span class="pb-ab-score" id="pb-cha">8</span>
+          <button class="pb-plus" onclick="pbAdjust('cha', 1)">+</button>
+          <span class="pb-ab-cost" id="pb-cost-cha">(0 pts)</span>
+        </div>
+      </div>
+      <div class="pb-apply-row">
+        <button class="pb-reset-btn" onclick="pbReset()">🔄 Reset</button>
+        <button class="pb-apply-btn" onclick="pbApply()">✅ Apply Scores</button>
+      </div>
+    </div>
+
+    <!-- Standard Array Tab -->
+    <div class="pointbuy-content hidden" id="pb-tab-standard">
+      <p class="sa-instructions">Assign each value to an ability score. Each value can only be used once.</p>
+      <div class="sa-values" id="sa-values">
+        <span class="sa-value" data-sa-val="15">15</span>
+        <span class="sa-value" data-sa-val="14">14</span>
+        <span class="sa-value" data-sa-val="13">13</span>
+        <span class="sa-value" data-sa-val="12">12</span>
+        <span class="sa-value" data-sa-val="10">10</span>
+        <span class="sa-value" data-sa-val="8">8</span>
+      </div>
+      <div class="sa-assignments">
+        <div class="sa-assign-row">
+          <span class="sa-ab-name">STR</span>
+          <select class="sa-select" id="sa-str" onchange="saValidate()">
+            <option value="">—</option>
+            <option value="15">15</option><option value="14">14</option><option value="13">13</option>
+            <option value="12">12</option><option value="10">10</option><option value="8">8</option>
+          </select>
+        </div>
+        <div class="sa-assign-row">
+          <span class="sa-ab-name">DEX</span>
+          <select class="sa-select" id="sa-dex" onchange="saValidate()">
+            <option value="">—</option>
+            <option value="15">15</option><option value="14">14</option><option value="13">13</option>
+            <option value="12">12</option><option value="10">10</option><option value="8">8</option>
+          </select>
+        </div>
+        <div class="sa-assign-row">
+          <span class="sa-ab-name">CON</span>
+          <select class="sa-select" id="sa-con" onchange="saValidate()">
+            <option value="">—</option>
+            <option value="15">15</option><option value="14">14</option><option value="13">13</option>
+            <option value="12">12</option><option value="10">10</option><option value="8">8</option>
+          </select>
+        </div>
+        <div class="sa-assign-row">
+          <span class="sa-ab-name">INT</span>
+          <select class="sa-select" id="sa-int" onchange="saValidate()">
+            <option value="">—</option>
+            <option value="15">15</option><option value="14">14</option><option value="13">13</option>
+            <option value="12">12</option><option value="10">10</option><option value="8">8</option>
+          </select>
+        </div>
+        <div class="sa-assign-row">
+          <span class="sa-ab-name">WIS</span>
+          <select class="sa-select" id="sa-wis" onchange="saValidate()">
+            <option value="">—</option>
+            <option value="15">15</option><option value="14">14</option><option value="13">13</option>
+            <option value="12">12</option><option value="10">10</option><option value="8">8</option>
+          </select>
+        </div>
+        <div class="sa-assign-row">
+          <span class="sa-ab-name">CHA</span>
+          <select class="sa-select" id="sa-cha" onchange="saValidate()">
+            <option value="">—</option>
+            <option value="15">15</option><option value="14">14</option><option value="13">13</option>
+            <option value="12">12</option><option value="10">10</option><option value="8">8</option>
+          </select>
+        </div>
+      </div>
+      <div class="sa-status" id="sa-status"></div>
+      <div class="pb-apply-row">
+        <button class="pb-reset-btn" onclick="saReset()">🔄 Reset</button>
+        <button class="pb-apply-btn" id="sa-apply-btn" onclick="saApply()" disabled>✅ Apply Scores</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Trigger button (place in toolbar or ability scores header) -->
+<!-- <button class="action-btn" onclick="openPointBuy()" title="Point Buy / Standard Array">🎯 Point Buy</button> -->

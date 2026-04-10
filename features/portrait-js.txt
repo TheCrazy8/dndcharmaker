@@ -1,0 +1,74 @@
+/* ---------- Portrait Upload / Display / Clear ---------- */
+
+function initPortrait() {
+  const data = loadRaw();
+  const base64 = data.charPortrait;
+  if (base64) {
+    showPortrait(base64);
+  }
+}
+
+function uploadPortrait(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    alert('Please select an image file.');
+    return;
+  }
+
+  // Limit file size to 500KB after encoding
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const base64 = e.target.result;
+    // Check size (base64 is ~33% larger than raw)
+    if (base64.length > 700000) {
+      alert('Image is too large. Please use an image under 500KB.');
+      return;
+    }
+    showPortrait(base64);
+    savePortraitData(base64);
+  };
+  reader.readAsDataURL(file);
+
+  // Reset file input so same file can be re-uploaded
+  event.target.value = '';
+}
+
+function clearPortrait() {
+  const img = document.getElementById('portrait-img');
+  const placeholder = document.getElementById('portrait-placeholder');
+  if (img) {
+    img.src = '';
+    img.style.display = 'none';
+  }
+  if (placeholder) {
+    placeholder.style.display = 'flex';
+  }
+  savePortraitData('');
+}
+
+function showPortrait(base64) {
+  const img = document.getElementById('portrait-img');
+  const placeholder = document.getElementById('portrait-placeholder');
+  if (!base64) return;
+  if (img) {
+    img.src = base64;
+    img.style.display = 'block';
+  }
+  if (placeholder) {
+    placeholder.style.display = 'none';
+  }
+}
+
+function savePortraitData(base64) {
+  const data = loadRaw();
+  data.charPortrait = base64;
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn('localStorage save failed (portrait may be too large):', e);
+    alert('Failed to save portrait. The image may be too large for localStorage.');
+  }
+}

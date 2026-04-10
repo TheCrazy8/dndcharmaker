@@ -1,0 +1,55 @@
+<!-- Concentration Tracker -->
+<div class="section concentration-section">
+  <h3 class="section-title">🎯 Concentration</h3>
+  <div id="concentration-widget" class="concentration-widget">
+    <div class="concentration-inactive" id="concentration-inactive">
+      <span class="concentration-none-text">Not concentrating</span>
+    </div>
+    <div class="concentration-active" id="concentration-active" style="display:none">
+      <div class="concentration-info">
+        <span class="concentration-spell-label">Spell:</span>
+        <input type="text" id="concentration-spell" data-key="concentrationSpell" placeholder="Spell name…" class="concentration-spell-input" />
+      </div>
+      <div class="concentration-info">
+        <span class="concentration-spell-label">Duration:</span>
+        <input type="text" id="concentration-duration" data-key="concentrationDuration" placeholder="e.g. 1 minute" class="concentration-duration-input" />
+      </div>
+      <button class="concentration-dismiss" onclick="dismissConcentration()" title="Drop concentration">✖ Drop</button>
+    </div>
+    <button class="concentration-start-btn" id="concentration-start-btn" onclick="startConcentration()" title="Begin concentrating on a spell">🎯 Concentrate</button>
+  </div>
+</div>
+
+<!--
+  Integration JS (add to script.js):
+
+  function startConcentration() {
+    document.getElementById('concentration-active').style.display = 'block';
+    document.getElementById('concentration-inactive').style.display = 'none';
+    document.getElementById('concentration-start-btn').style.display = 'none';
+    document.getElementById('concentration-spell').focus();
+  }
+
+  function dismissConcentration() {
+    if (!confirm('Drop concentration?')) return;
+    const spellEl = document.getElementById('concentration-spell');
+    const durEl = document.getElementById('concentration-duration');
+    if (spellEl) spellEl.value = '';
+    if (durEl) durEl.value = '';
+    document.getElementById('concentration-active').style.display = 'none';
+    document.getElementById('concentration-inactive').style.display = 'block';
+    document.getElementById('concentration-start-btn').style.display = 'block';
+    saveToStorage();
+  }
+
+  // In loadFromStorage or after applyData, call initConcentration():
+  function initConcentration() {
+    const data = loadRaw();
+    if (data.concentrationSpell) {
+      document.getElementById('concentration-active').style.display = 'block';
+      document.getElementById('concentration-inactive').style.display = 'none';
+      document.getElementById('concentration-start-btn').style.display = 'none';
+    }
+  }
+-->
+

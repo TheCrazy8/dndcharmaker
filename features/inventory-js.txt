@@ -1,0 +1,79 @@
+/* ---------- Inventory Weight Tracking ---------- */
+
+const INVENTORY_ROWS = 20;
+
+function buildInventoryRows() {
+  const tbody = document.getElementById('inventory-tbody');
+  if (!tbody) return;
+
+  for (let i = 0; i < INVENTORY_ROWS; i++) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" data-key="invName${i}" placeholder="Item name" /></td>
+      <td><input type="number" data-key="invQty${i}" min="0" value="" placeholder="0" class="inv-num-input" /></td>
+      <td><input type="number" data-key="invWeight${i}" min="0" step="0.1" value="" placeholder="0" class="inv-num-input" /></td>
+      <td class="inv-row-total" id="inv-row-total-${i}">0</td>
+      <td><input type="text" data-key="invNotes${i}" placeholder="Notes…" /></td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+function calcInventory() {
+  let totalWeight = 0;
+
+  for (let i = 0; i < INVENTORY_ROWS; i++) {
+    const qtyEl = document.querySelector(`[data-key="invQty${i}"]`);
+    const wtEl = document.querySelector(`[data-key="invWeight${i}"]`);
+    const totalEl = document.getElementById(`inv-row-total-${i}`);
+
+    const qty = Number(qtyEl?.value) || 0;
+    const wt = Number(wtEl?.value) || 0;
+    const rowTotal = Math.round(qty * wt * 100) / 100;
+
+    if (totalEl) totalEl.textContent = rowTotal > 0 ? rowTotal : '—';
+    totalWeight += rowTotal;
+  }
+
+  totalWeight = Math.round(totalWeight * 100) / 100;
+
+  // Update summary
+  const totalEl = document.getElementById('inv-total-weight');
+  if (totalEl) totalEl.textContent = totalWeight;
+
+  // Calculate encumbrance based on STR score
+  const strScore = getScore('str');
+  const normalMax = strScore * 15;
+  const encumberedMax = strScore * 15; // encumbered above this (variant)
+  const heavyMax = strScore * 10;      // heavily encumbered = STR*10 (variant)
+
+  const capacityEl = document.getElementById('inv-capacity');
+  if (capacityEl) capacityEl.textContent = `(Capacity: ${normalMax} lb)`;
+
+  const statusEl = document.getElementById('inv-encumbrance');
+  if (statusEl) {
+    if (totalWeight > normalMax) {
+      statusEl.textContent = '⚠️ Over Capacity!';
+      statusEl.className = 'inv-encumbrance inv-over';
+    } else if (totalWeight > normalMax - heavyMax) {
+      // Using variant encumbrance: STR*10 = heavily, STR*5 = lightly
+      const lightThreshold = strScore * 5;
+      const heavyThreshold = strScore * 10;
+      if (totalWeight > heavyThreshold) {
+        statusEl.textContent = '🔴 Heavily Encumbered';
+        statusEl.className = 'inv-encumbrance inv-heavy';
+      } else if (totalWeight > lightThreshold) {
+        statusEl.textContent = '🟡 Encumbered';
+        statusEl.className = 'inv-encumbrance inv-enc';
+      } else {
+        statusEl.textContent = '✅ Normal';
+        statusEl.className = 'inv-encumbrance inv-normal';
+      }
+    } else {
+      statusEl.textContent = '✅ Normal';
+      statusEl.className = 'inv-encumbrance inv-normal';
+    }
+  }
+}
+
+/* Call buildInventoryRows() in buildDynamicTables() and calcInventory() in recalcAll() */
