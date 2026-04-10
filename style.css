@@ -5,7 +5,9 @@
 /* ---------- Google Font import fallback handled by HTML ---------- */
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English&display=swap');
 
-/* ---------- CSS Custom Properties (Light Mode) ---------- */
+/* ---------- CSS Custom Properties (Light Mode) ----------
+   These variables are the base theme. The body.dark-mode selector
+   below overrides them all to provide the dark theme. */
 :root {
   --bg-page:      #f5efe0;
   --bg-section:   #fdf8ee;

@@ -11,10 +11,11 @@ const SPELL_ROWS    = 35;
 const SPELL_LEVELS  = 9;
 const LS_KEY        = 'dnd5e_char_sheet';
 
-/* Spell slot totals per level per character level (5e standard) */
+/* Spell slot totals per level per character level (5e standard).
+   Index 0 is an unused placeholder so that array index matches character level (1–20). */
 const SPELL_SLOT_TABLE = [
 //  level:  1   2   3   4   5   6   7   8   9
-  [0, 0, 0, 0, 0, 0, 0, 0, 0], // placeholder index 0
+  [0, 0, 0, 0, 0, 0, 0, 0, 0], // index 0 — unused placeholder
   [2, 0, 0, 0, 0, 0, 0, 0, 0], // char level 1
   [3, 0, 0, 0, 0, 0, 0, 0, 0], // 2
   [4, 2, 0, 0, 0, 0, 0, 0, 0], // 3
@@ -102,9 +103,10 @@ function buildDynamicTables() {
 }
 
 function ordinal(n) {
+  // Special case for teens (11th, 12th, 13th) before checking last digit
+  if (n % 100 >= 11 && n % 100 <= 13) return `${n}th`;
   const s = ['th','st','nd','rd'];
-  const v = n % 100;
-  return s[(v - 20) % 10] || s[v] || s[0];
+  return `${n}${s[n % 10] || 'th'}`;
 }
 
 /* ============================================================
