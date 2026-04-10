@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>D&amp;D 5e Character Sheet</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <!-- Top Toolbar -->
+  <header class="toolbar">
+    <div class="toolbar-title">⚔️ D&amp;D 5e Character Sheet</div>
+    <nav class="tab-nav" role="tablist">
+      <button class="tab-btn active" data-page="page1" role="tab" aria-selected="true">📜 Main Sheet</button>
+      <button class="tab-btn" data-page="page2" role="tab" aria-selected="false">📖 Additional Info</button>
+      <button class="tab-btn" data-page="page3" role="tab" aria-selected="false">✨ Spellcasting</button>
+      <button class="tab-btn" data-page="page4" role="tab" aria-selected="false">📝 Notes</button>
+    </nav>
+    <div class="toolbar-actions">
+      <button id="btn-new" class="action-btn" title="New Character">🆕 New</button>
+      <button id="btn-export" class="action-btn" title="Export to JSON">💾 Export</button>
+      <label class="action-btn" title="Import from JSON">
+        📂 Import
+        <input type="file" id="import-file" accept=".json" style="display:none" />
+      </label>
+      <button id="btn-print" class="action-btn" title="Print">🖨️ Print</button>
+      <button id="btn-theme" class="action-btn" title="Toggle Dark/Light Mode">🌙 Dark</button>
+    </div>
+  </header>
+
+  <main class="sheet-container">
+
+    <!-- ============================================================ -->
+    <!-- PAGE 1: MAIN CHARACTER SHEET                                 -->
+    <!-- ============================================================ -->
+    <section id="page1" class="page active" role="tabpanel">
+
+      <!-- Header Row -->
+      <div class="section header-section">
+        <div class="header-grid">
+          <div class="field-group span-2">
+            <label for="char-name">Character Name</label>
+            <input type="text" id="char-name" data-key="charName" placeholder="Enter name…" class="large-input" />
+          </div>
+          <div class="field-group">
+            <label for="background">Background</label>
+            <input type="text" id="background" data-key="background" placeholder="e.g. Acolyte" />
+          </div>
+          <div class="field-group">
+            <label for="species">Species</label>
+            <input type="text" id="species" data-key="species" placeholder="e.g. Human" />
+          </div>
+          <div class="field-group">
+            <label for="main-class">Main Class</label>
+            <select id="main-class" data-key="mainClass">
+              <option value="">— Select Class —</option>
+              <option>Abyssal</option>
+              <option>Artificer</option>
+              <option>Barbarian</option>
+              <option>Bard</option>
+              <option>Blood Hunter</option>
+              <option>Cleric</option>
+              <option>Dragon Knight</option>
+              <option>Druid</option>
+              <option>Elementalist</option>
+              <option>Fighter</option>
+              <option>Gunslinger</option>
+              <option>Illrigger</option>
+              <option>Kinetic</option>
+              <option>Magus</option>
+              <option>Martyr</option>
+              <option>Medium</option>
+              <option>Monk</option>
+              <option>Necromancer</option>
+              <option>Occultist</option>
+              <option>Paladin</option>
+              <option>Paragon</option>
+              <option>Psion</option>
+              <option>Pugilist</option>
+              <option>Ranger</option>
+              <option>Rogue</option>
+              <option>Runecrafter</option>
+              <option>Shaman</option>
+              <option>Shaper</option>
+              <option>Sorcerer</option>
+              <option>Spellblade</option>
+              <option>Summoner</option>
+              <option>Swashbuckler</option>
+              <option>Vessel</option>
+              <option>Vigilante</option>
+              <option>Warlock</option>
+              <option>Warlord</option>
+              <option>Weaver</option>
+              <option>Witch</option>
+              <option>Witcher</option>
+              <option>Wizard</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="subclass">Subclass</label>
+            <input type="text" id="subclass" data-key="subclass" placeholder="e.g. Evocation" />
+          </div>
+          <div class="field-group narrow">
+            <label for="level">Level</label>
+            <input type="number" id="level" data-key="level" min="1" max="20" value="1" />
+          </div>
+          <div class="field-group">
+            <label for="xp">XP</label>
+            <input type="number" id="xp" data-key="xp" min="0" value="0" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Combat Stats Row -->
+      <div class="section combat-section">
+        <div class="combat-grid">
+          <!-- AC -->
+          <div class="combat-box">
+            <div class="combat-label">Armor Class</div>
+            <input type="number" id="ac" data-key="ac" class="combat-value" min="0" value="10" />
+          </div>
+          <!-- Shield -->
+          <div class="combat-box shield-box">
+            <div class="combat-label">Shield</div>
+            <label class="checkbox-label large-check">
+              <input type="checkbox" id="shield" data-key="shield" />
+              <span class="check-mark"></span>
+            </label>
+          </div>
+          <!-- Hit Points -->
+          <div class="combat-box hp-box">
+            <div class="combat-label">Hit Points</div>
+            <div class="hp-row">
+              <div class="hp-field">
+                <label>Max</label>
+                <input type="number" id="hp-max" data-key="hpMax" min="0" value="0" />
+              </div>
+              <div class="hp-field">
+                <label>Current</label>
+                <input type="number" id="hp-current" data-key="hpCurrent" min="0" value="0" />
+              </div>
+              <div class="hp-field">
+                <label>Temp</label>
+                <input type="number" id="hp-temp" data-key="hpTemp" min="0" value="0" />
+              </div>
+            </div>
+          </div>
+          <!-- Hit Dice -->
+          <div class="combat-box hd-box">
+            <div class="combat-label">Hit Dice</div>
+            <div class="hp-row">
+              <div class="hp-field">
+                <label>Max</label>
+                <input type="text" id="hd-max" data-key="hdMax" placeholder="e.g. 5d8" />
+              </div>
+              <div class="hp-field">
+                <label>Spent</label>
+                <input type="number" id="hd-spent" data-key="hdSpent" min="0" value="0" />
+              </div>
+            </div>
+          </div>
+          <!-- Death Saves -->
+          <div class="combat-box death-box">
+            <div class="combat-label">Death Saves</div>
+            <div class="death-saves">
+              <div class="death-row">
+                <span class="death-label success">Successes</span>
+                <div class="death-checks">
+                  <label class="checkbox-label"><input type="checkbox" data-key="deathSuccess1" /><span class="check-mark"></span></label>
+                  <label class="checkbox-label"><input type="checkbox" data-key="deathSuccess2" /><span class="check-mark"></span></label>
+                  <label class="checkbox-label"><input type="checkbox" data-key="deathSuccess3" /><span class="check-mark"></span></label>
+                </div>
+              </div>
+              <div class="death-row">
+                <span class="death-label failure">Failures</span>
+                <div class="death-checks">
+                  <label class="checkbox-label"><input type="checkbox" data-key="deathFail1" /><span class="check-mark fail"></span></label>
+                  <label class="checkbox-label"><input type="checkbox" data-key="deathFail2" /><span class="check-mark fail"></span></label>
+                  <label class="checkbox-label"><input type="checkbox" data-key="deathFail3" /><span class="check-mark fail"></span></label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Three-Column Layout -->
+      <div class="main-columns">
+
+        <!-- LEFT COLUMN: Abilities & Skills -->
+        <div class="left-col">
+
+          <!-- Proficiency Bonus -->
+          <div class="section prof-section">
+            <div class="prof-circle">
+              <span class="prof-label">Proficiency Bonus</span>
+              <span id="prof-bonus" class="prof-value">+2</span>
+            </div>
+          </div>
+
+          <!-- Ability Scores -->
+          <div class="section abilities-section">
+            <h3 class="section-title">Ability Scores</h3>
+
+            <!-- STR -->
+            <div class="ability-block" id="ability-str">
+              <div class="ability-header">
+                <span class="ability-name">STR</span>
+                <span class="ability-full">Strength</span>
+              </div>
+              <div class="ability-body">
+                <div class="score-mod-row">
+                  <div class="score-col">
+                    <label>Score</label>
+                    <input type="number" class="ability-score" data-ability="str" data-key="strScore" value="10" min="1" max="30" />
+                  </div>
+                  <div class="mod-col">
+                    <label>Mod</label>
+                    <div class="mod-display" id="str-mod">+0</div>
+                  </div>
+                  <div class="save-col">
+                    <label>Save</label>
+                    <div class="save-row">
+                      <label class="checkbox-label">
+                        <input type="checkbox" data-key="strSaveProf" class="save-prof" data-ability="str" />
+                        <span class="check-mark"></span>
+                      </label>
+                      <span class="save-mod" id="str-save">+0</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="skills-list">
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillAthletics" data-ability="str" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-athletics">+0</span>
+                    <span class="skill-name">Athletics</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- DEX -->
+            <div class="ability-block" id="ability-dex">
+              <div class="ability-header">
+                <span class="ability-name">DEX</span>
+                <span class="ability-full">Dexterity</span>
+              </div>
+              <div class="ability-body">
+                <div class="score-mod-row">
+                  <div class="score-col">
+                    <label>Score</label>
+                    <input type="number" class="ability-score" data-ability="dex" data-key="dexScore" value="10" min="1" max="30" />
+                  </div>
+                  <div class="mod-col">
+                    <label>Mod</label>
+                    <div class="mod-display" id="dex-mod">+0</div>
+                  </div>
+                  <div class="save-col">
+                    <label>Save</label>
+                    <div class="save-row">
+                      <label class="checkbox-label">
+                        <input type="checkbox" data-key="dexSaveProf" class="save-prof" data-ability="dex" />
+                        <span class="check-mark"></span>
+                      </label>
+                      <span class="save-mod" id="dex-save">+0</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="skills-list">
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillAcrobatics" data-ability="dex" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-acrobatics">+0</span>
+                    <span class="skill-name">Acrobatics</span>
+                  </div>
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillSleightOfHand" data-ability="dex" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-sleightofhand">+0</span>
+                    <span class="skill-name">Sleight of Hand</span>
+                  </div>
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillStealth" data-ability="dex" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-stealth">+0</span>
+                    <span class="skill-name">Stealth</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CON -->
+            <div class="ability-block" id="ability-con">
+              <div class="ability-header">
+                <span class="ability-name">CON</span>
+                <span class="ability-full">Constitution</span>
+              </div>
+              <div class="ability-body">
+                <div class="score-mod-row">
+                  <div class="score-col">
+                    <label>Score</label>
+                    <input type="number" class="ability-score" data-ability="con" data-key="conScore" value="10" min="1" max="30" />
+                  </div>
+                  <div class="mod-col">
+                    <label>Mod</label>
+                    <div class="mod-display" id="con-mod">+0</div>
+                  </div>
+                  <div class="save-col">
+                    <label>Save</label>
+                    <div class="save-row">
+                      <label class="checkbox-label">
+                        <input type="checkbox" data-key="conSaveProf" class="save-prof" data-ability="con" />
+                        <span class="check-mark"></span>
+                      </label>
+                      <span class="save-mod" id="con-save">+0</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- INT -->
+            <div class="ability-block" id="ability-int">
+              <div class="ability-header">
+                <span class="ability-name">INT</span>
+                <span class="ability-full">Intelligence</span>
+              </div>
+              <div class="ability-body">
+                <div class="score-mod-row">
+                  <div class="score-col">
+                    <label>Score</label>
+                    <input type="number" class="ability-score" data-ability="int" data-key="intScore" value="10" min="1" max="30" />
+                  </div>
+                  <div class="mod-col">
+                    <label>Mod</label>
+                    <div class="mod-display" id="int-mod">+0</div>
+                  </div>
+                  <div class="save-col">
+                    <label>Save</label>
+                    <div class="save-row">
+                      <label class="checkbox-label">
+                        <input type="checkbox" data-key="intSaveProf" class="save-prof" data-ability="int" />
+                        <span class="check-mark"></span>
+                      </label>
+                      <span class="save-mod" id="int-save">+0</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="skills-list">
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillArcana" data-ability="int" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-arcana">+0</span>
+                    <span class="skill-name">Arcana</span>
+                  </div>
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillHistory" data-ability="int" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-history">+0</span>
+                    <span class="skill-name">History</span>
+                  </div>
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillInvestigation" data-ability="int" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-investigation">+0</span>
+                    <span class="skill-name">Investigation</span>
+                  </div>
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillNature" data-ability="int" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-nature">+0</span>
+                    <span class="skill-name">Nature</span>
+                  </div>
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillReligion" data-ability="int" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-religion">+0</span>
+                    <span class="skill-name">Religion</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- WIS -->
+            <div class="ability-block" id="ability-wis">
+              <div class="ability-header">
+                <span class="ability-name">WIS</span>
+                <span class="ability-full">Wisdom</span>
+              </div>
+              <div class="ability-body">
+                <div class="score-mod-row">
+                  <div class="score-col">
+                    <label>Score</label>
+                    <input type="number" class="ability-score" data-ability="wis" data-key="wisScore" value="10" min="1" max="30" />
+                  </div>
+                  <div class="mod-col">
+                    <label>Mod</label>
+                    <div class="mod-display" id="wis-mod">+0</div>
+                  </div>
+                  <div class="save-col">
+                    <label>Save</label>
+                    <div class="save-row">
+                      <label class="checkbox-label">
+                        <input type="checkbox" data-key="wisSaveProf" class="save-prof" data-ability="wis" />
+                        <span class="check-mark"></span>
+                      </label>
+                      <span class="save-mod" id="wis-save">+0</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="skills-list">
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillAnimalHandling" data-ability="wis" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-animalhandling">+0</span>
+                    <span class="skill-name">Animal Handling</span>
+                  </div>
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillInsight" data-ability="wis" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-insight">+0</span>
+                    <span class="skill-name">Insight</span>
+                  </div>
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillMedicine" data-ability="wis" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-medicine">+0</span>
+                    <span class="skill-name">Medicine</span>
+                  </div>
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillPerception" data-ability="wis" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-perception">+0</span>
+                    <span class="skill-name">Perception</span>
+                  </div>
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillSurvival" data-ability="wis" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-survival">+0</span>
+                    <span class="skill-name">Survival</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CHA -->
+            <div class="ability-block" id="ability-cha">
+              <div class="ability-header">
+                <span class="ability-name">CHA</span>
+                <span class="ability-full">Charisma</span>
+              </div>
+              <div class="ability-body">
+                <div class="score-mod-row">
+                  <div class="score-col">
+                    <label>Score</label>
+                    <input type="number" class="ability-score" data-ability="cha" data-key="chaScore" value="10" min="1" max="30" />
+                  </div>
+                  <div class="mod-col">
+                    <label>Mod</label>
+                    <div class="mod-display" id="cha-mod">+0</div>
+                  </div>
+                  <div class="save-col">
+                    <label>Save</label>
+                    <div class="save-row">
+                      <label class="checkbox-label">
+                        <input type="checkbox" data-key="chaSaveProf" class="save-prof" data-ability="cha" />
+                        <span class="check-mark"></span>
+                      </label>
+                      <span class="save-mod" id="cha-save">+0</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="skills-list">
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillDeception" data-ability="cha" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-deception">+0</span>
+                    <span class="skill-name">Deception</span>
+                  </div>
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillIntimidation" data-ability="cha" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-intimidation">+0</span>
+                    <span class="skill-name">Intimidation</span>
+                  </div>
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillPerformance" data-ability="cha" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-performance">+0</span>
+                    <span class="skill-name">Performance</span>
+                  </div>
+                  <div class="skill-row">
+                    <label class="checkbox-label"><input type="checkbox" data-key="skillPersuasion" data-ability="cha" class="skill-prof" /><span class="check-mark small"></span></label>
+                    <span class="skill-mod" id="mod-persuasion">+0</span>
+                    <span class="skill-name">Persuasion</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div><!-- end abilities-section -->
+
+          <!-- Heroic Inspiration -->
+          <div class="section inspiration-section">
+            <label class="inline-check-label">
+              <input type="checkbox" id="heroic-inspiration" data-key="heroicInspiration" />
+              <span class="check-mark"></span>
+              Heroic Inspiration
+            </label>
+          </div>
+
+          <!-- Equipment Training & Proficiencies -->
+          <div class="section proficiencies-section">
+            <h3 class="section-title">Equipment Training &amp; Proficiencies</h3>
+            <div class="armor-training">
+              <span class="sub-label">Armor Training:</span>
+              <label class="inline-check-label">
+                <input type="checkbox" data-key="armorLight" />
+                <span class="check-mark small"></span> Light
+              </label>
+              <label class="inline-check-label">
+                <input type="checkbox" data-key="armorMedium" />
+                <span class="check-mark small"></span> Medium
+              </label>
+              <label class="inline-check-label">
+                <input type="checkbox" data-key="armorHeavy" />
+                <span class="check-mark small"></span> Heavy
+              </label>
+              <label class="inline-check-label">
+                <input type="checkbox" data-key="armorShields" />
+                <span class="check-mark small"></span> Shields
+              </label>
+            </div>
+            <div class="field-group mt-sm">
+              <label for="weapons-prof">Weapons</label>
+              <input type="text" id="weapons-prof" data-key="weaponsProf" placeholder="e.g. Simple, Martial…" />
+            </div>
+            <div class="field-group mt-sm">
+              <label for="tools-prof">Tools</label>
+              <input type="text" id="tools-prof" data-key="toolsProf" placeholder="e.g. Thieves' Tools…" />
+            </div>
+          </div>
+
+        </div><!-- end left-col -->
+
+        <!-- CENTER / RIGHT COLUMNS -->
+        <div class="right-cols">
+
+          <!-- Combat Stats Row 2 -->
+          <div class="section secondary-combat">
+            <div class="secondary-combat-grid">
+              <div class="combat-box">
+                <div class="combat-label">Initiative</div>
+                <div class="combat-value read-only" id="initiative">+0</div>
+              </div>
+              <div class="combat-box speed-box">
+                <div class="combat-label">Speed</div>
+                <div class="speed-fields">
+                  <div class="speed-field">
+                    <label>Walk</label>
+                    <input type="number" data-key="speedWalk" value="30" min="0" />
+                  </div>
+                  <div class="speed-field">
+                    <label>Swim</label>
+                    <input type="number" data-key="speedSwim" value="0" min="0" />
+                  </div>
+                  <div class="speed-field">
+                    <label>Climb</label>
+                    <input type="number" data-key="speedClimb" value="0" min="0" />
+                  </div>
+                  <div class="speed-field">
+                    <label>Fly</label>
+                    <input type="number" data-key="speedFly" value="0" min="0" />
+                  </div>
+                </div>
+              </div>
+              <div class="combat-box">
+                <div class="combat-label">Size</div>
+                <input type="text" data-key="size" placeholder="Medium" class="combat-value-input" />
+              </div>
+              <div class="combat-box">
+                <div class="combat-label">Passive Perception</div>
+                <div class="combat-value read-only" id="passive-perception">10</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Weapons & Damage Cantrips Table -->
+          <div class="section weapons-section">
+            <h3 class="section-title">Weapons &amp; Damage Cantrips</h3>
+            <div class="table-wrapper">
+              <table class="weapons-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Atk Bonus / DC</th>
+                    <th>Damage &amp; Type</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="weapons-tbody">
+                  <!-- rows generated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Class Features -->
+          <div class="section">
+            <h3 class="section-title">Class Features</h3>
+            <textarea id="class-features" data-key="classFeatures" class="large-textarea" rows="8" placeholder="List your class features here…"></textarea>
+          </div>
+
+          <!-- Two-column: Species Traits | Feats -->
+          <div class="two-col-section">
+            <div class="section">
+              <h3 class="section-title">Species Traits</h3>
+              <textarea id="species-traits" data-key="speciesTraits" rows="6" placeholder="List species traits…"></textarea>
+            </div>
+            <div class="section">
+              <h3 class="section-title">Feats</h3>
+              <textarea id="feats" data-key="feats" rows="6" placeholder="List feats…"></textarea>
+            </div>
+          </div>
+
+        </div><!-- end right-cols -->
+      </div><!-- end main-columns -->
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- PAGE 2: ADDITIONAL INFO                                      -->
+    <!-- ============================================================ -->
+    <section id="page2" class="page" role="tabpanel">
+      <div class="page-columns">
+        <!-- Left side -->
+        <div class="page-col">
+
+          <!-- Survival Trackers -->
+          <div class="section">
+            <h3 class="section-title">Survival Trackers</h3>
+            <table class="tracker-table">
+              <thead>
+                <tr><th></th><th>Status / Notes</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="tracker-label">🍖 Hunger</td>
+                  <td><input type="text" data-key="hunger" placeholder="e.g. Day 2 without food…" /></td>
+                </tr>
+                <tr>
+                  <td class="tracker-label">💧 Thirst</td>
+                  <td><input type="text" data-key="thirst" placeholder="e.g. Parched…" /></td>
+                </tr>
+                <tr>
+                  <td class="tracker-label">🤒 Illness</td>
+                  <td><input type="text" data-key="illness" placeholder="e.g. Infected wound…" /></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Sanity & Honor -->
+          <div class="section">
+            <div class="sanity-honor-grid">
+              <div class="sanity-honor-box">
+                <h4>Sanity</h4>
+                <div class="score-mod-pair">
+                  <div>
+                    <label>Score</label>
+                    <input type="number" data-key="sanityScore" value="0" />
+                  </div>
+                  <div>
+                    <label>Modifier</label>
+                    <div class="mod-display" id="sanity-mod">+0</div>
+                  </div>
+                </div>
+              </div>
+              <div class="sanity-honor-box">
+                <h4>Honor</h4>
+                <div class="score-mod-pair">
+                  <div>
+                    <label>Score</label>
+                    <input type="number" data-key="honorScore" value="0" />
+                  </div>
+                  <div>
+                    <label>Modifier</label>
+                    <div class="mod-display" id="honor-mod">+0</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Other Info -->
+          <div class="section flex-grow">
+            <h3 class="section-title">Other Info</h3>
+            <textarea data-key="otherInfo" class="large-textarea" rows="12" placeholder="Miscellaneous character information…"></textarea>
+          </div>
+
+        </div><!-- end page-col left -->
+
+        <!-- Right side -->
+        <div class="page-col">
+
+          <div class="section">
+            <h3 class="section-title">Senses</h3>
+            <textarea data-key="senses" rows="4" placeholder="Darkvision 60 ft., Tremorsense…"></textarea>
+          </div>
+
+          <div class="section">
+            <h3 class="section-title">Conditions</h3>
+            <textarea data-key="conditions" rows="4" placeholder="Poisoned, Charmed, etc.…"></textarea>
+          </div>
+
+          <div class="section">
+            <h3 class="section-title">Silk</h3>
+            <div class="field-row">
+              <div class="field-group">
+                <label>Amount</label>
+                <input type="text" data-key="silkAmount" placeholder="e.g. 3 yards" />
+              </div>
+              <div class="field-group">
+                <label>Containment Vessel</label>
+                <input type="text" data-key="silkVessel" placeholder="e.g. Silk pouch" />
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h3 class="section-title">Multiclass Info</h3>
+            <textarea data-key="multiclassInfo" rows="5" placeholder="Multiclass levels, requirements, features…"></textarea>
+          </div>
+
+          <div class="section">
+            <h3 class="section-title">Talisman</h3>
+            <textarea data-key="talisman" rows="5" placeholder="Describe your talisman and its properties…"></textarea>
+          </div>
+
+        </div><!-- end page-col right -->
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- PAGE 3: SPELLCASTING & EQUIPMENT                             -->
+    <!-- ============================================================ -->
+    <section id="page3" class="page" role="tabpanel">
+      <div class="page-columns">
+        <!-- Left side: Spellcasting -->
+        <div class="page-col spell-col">
+
+          <!-- Spellcasting Header -->
+          <div class="section">
+            <h3 class="section-title">Spellcasting</h3>
+            <div class="spell-header-grid">
+              <div class="field-group">
+                <label for="spell-ability">Spellcasting Ability</label>
+                <select id="spell-ability" data-key="spellAbility">
+                  <option value="">— None —</option>
+                  <option value="int">Intelligence</option>
+                  <option value="wis">Wisdom</option>
+                  <option value="cha">Charisma</option>
+                </select>
+              </div>
+              <div class="combat-box">
+                <div class="combat-label">Spell Modifier</div>
+                <div class="combat-value read-only" id="spell-mod">—</div>
+              </div>
+              <div class="combat-box">
+                <div class="combat-label">Spell Save DC</div>
+                <div class="combat-value read-only" id="spell-dc">—</div>
+              </div>
+              <div class="combat-box">
+                <div class="combat-label">Spell Attack Bonus</div>
+                <div class="combat-value read-only" id="spell-atk">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Spell Slots -->
+          <div class="section">
+            <h3 class="section-title">Spell Slots</h3>
+            <table class="spell-slots-table">
+              <thead>
+                <tr>
+                  <th>Level</th>
+                  <th>Total</th>
+                  <th>Expended</th>
+                </tr>
+              </thead>
+              <tbody id="spell-slots-tbody">
+                <!-- generated by JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Cantrips & Prepared Spells -->
+          <div class="section">
+            <h3 class="section-title">Cantrips &amp; Prepared Spells</h3>
+            <div class="table-wrapper spells-wrapper">
+              <table class="spells-table">
+                <thead>
+                  <tr>
+                    <th>Lvl</th>
+                    <th>Name</th>
+                    <th>Cast Time</th>
+                    <th>Range</th>
+                    <th title="Concentration">C</th>
+                    <th title="Ritual">R</th>
+                    <th title="Material Component">M</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="spells-tbody">
+                  <!-- generated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div><!-- end spell-col -->
+
+        <!-- Right side: Character Details -->
+        <div class="page-col details-col">
+
+          <div class="section">
+            <h3 class="section-title">Appearance</h3>
+            <textarea data-key="appearance" rows="5" placeholder="Height, weight, eye color, hair color, distinguishing marks…"></textarea>
+          </div>
+
+          <div class="section">
+            <h3 class="section-title">Backstory &amp; Personality</h3>
+            <textarea data-key="backstory" class="large-textarea" rows="10" placeholder="Your character's history, motivations, personality traits…"></textarea>
+            <div class="field-group mt-sm">
+              <label for="alignment">Alignment</label>
+              <input type="text" id="alignment" data-key="alignment" placeholder="e.g. Chaotic Good" />
+            </div>
+          </div>
+
+          <div class="section">
+            <h3 class="section-title">Languages</h3>
+            <textarea data-key="languages" rows="4" placeholder="Common, Elvish, Dwarvish…"></textarea>
+          </div>
+
+          <div class="section">
+            <h3 class="section-title">Equipment</h3>
+            <textarea data-key="equipment" rows="6" placeholder="List your gear…"></textarea>
+            <div class="attunement-section">
+              <h4>Magic Item Attunement</h4>
+              <div class="attunement-slots">
+                <label class="attune-row">
+                  <input type="checkbox" data-key="attuneSlot1" /><span class="check-mark small"></span>
+                  <input type="text" data-key="attuneItem1" placeholder="Attuned item 1" />
+                </label>
+                <label class="attune-row">
+                  <input type="checkbox" data-key="attuneSlot2" /><span class="check-mark small"></span>
+                  <input type="text" data-key="attuneItem2" placeholder="Attuned item 2" />
+                </label>
+                <label class="attune-row">
+                  <input type="checkbox" data-key="attuneSlot3" /><span class="check-mark small"></span>
+                  <input type="text" data-key="attuneItem3" placeholder="Attuned item 3" />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Coins -->
+          <div class="section">
+            <h3 class="section-title">Coins</h3>
+            <div class="coins-grid">
+              <div class="coin-field cp">
+                <label>CP</label>
+                <input type="number" data-key="coinCP" value="0" min="0" />
+              </div>
+              <div class="coin-field sp">
+                <label>SP</label>
+                <input type="number" data-key="coinSP" value="0" min="0" />
+              </div>
+              <div class="coin-field ep">
+                <label>EP</label>
+                <input type="number" data-key="coinEP" value="0" min="0" />
+              </div>
+              <div class="coin-field gp">
+                <label>GP</label>
+                <input type="number" data-key="coinGP" value="0" min="0" />
+              </div>
+              <div class="coin-field pp">
+                <label>PP</label>
+                <input type="number" data-key="coinPP" value="0" min="0" />
+              </div>
+            </div>
+          </div>
+
+        </div><!-- end details-col -->
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- PAGE 4: NOTES                                                -->
+    <!-- ============================================================ -->
+    <section id="page4" class="page" role="tabpanel">
+      <div class="section notes-section">
+        <h3 class="section-title">Notes</h3>
+        <textarea id="notes" data-key="notes" class="notes-textarea" placeholder="Free-form notes, session logs, reminders…"></textarea>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
