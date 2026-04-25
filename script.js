@@ -433,6 +433,9 @@ function applyData(data) {
     document.body.classList.add('dark-mode');
     updateThemeButton();
   }
+
+  // Restore concentration state
+  initConcentration();
 }
 
 /* ============================================================
@@ -1489,5 +1492,39 @@ function saApply() {
   recalcAll();
   saveToStorage();
   closePointBuy();
+}
+
+/* ============================================================
+   CONCENTRATION FEATURE
+   ============================================================ */
+
+function startConcentration() {
+  document.getElementById('concentration-active').style.display = 'block';
+  document.getElementById('concentration-inactive').style.display = 'none';
+  document.getElementById('concentration-start-btn').style.display = 'none';
+  document.getElementById('concentration-spell').focus();
+}
+
+function dismissConcentration() {
+  if (!confirm('Drop concentration?')) return;
+  const spellEl = document.getElementById('concentration-spell');
+  const durEl = document.getElementById('concentration-duration');
+  if (spellEl) spellEl.value = '';
+  if (durEl) durEl.value = '';
+  document.getElementById('concentration-active').style.display = 'none';
+  document.getElementById('concentration-inactive').style.display = 'block';
+  document.getElementById('concentration-start-btn').style.display = 'block';
+  saveToStorage();
+}
+
+function initConcentration() {
+  const spellEl = document.getElementById('concentration-spell');
+  const isActive = spellEl ? spellEl.value.trim() !== '' : false;
+  const activeEl = document.getElementById('concentration-active');
+  const inactiveEl = document.getElementById('concentration-inactive');
+  const startBtn = document.getElementById('concentration-start-btn');
+  if (activeEl) activeEl.style.display = isActive ? 'block' : 'none';
+  if (inactiveEl) inactiveEl.style.display = isActive ? 'none' : 'block';
+  if (startBtn) startBtn.style.display = isActive ? 'none' : 'block';
 }
 
