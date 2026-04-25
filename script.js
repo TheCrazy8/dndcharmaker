@@ -48,6 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
   bindEvents();
   updateThemeButton();
   initDiceRoller();
+  initPortrait();
+  initExpertise();
 });
 
 /* ============================================================
@@ -101,6 +103,9 @@ function buildDynamicTables() {
     `;
     spTbody.appendChild(tr);
   }
+
+  // Inventory rows
+  buildInventoryRows();
 }
 
 function ordinal(n) {
@@ -202,19 +207,24 @@ function recalcAll() {
   };
 
   let perceptionMod = mods['wis'];
-  let perceptionProf = isChecked('skillPerception');
+  let perceptionProf = false;
+  let perceptionExpertise = false;
 
   Object.keys(skillMap).forEach(key => {
-    const ab     = skillMap[key];
-    const hasP   = isChecked(key);
-    const modVal = mods[ab] + (hasP ? pb : 0);
-    const elId   = 'mod-' + skillIdMap[key];
-    const el     = document.getElementById(elId);
+    const ab       = skillMap[key];
+    const checkbox = document.querySelector(`[data-key="${key}"]`);
+    const hasP     = checkbox ? checkbox.checked : false;
+    const hasExp   = checkbox ? checkbox.dataset.expertise === 'true' : false;
+    const profMult = hasExp ? 2 : (hasP ? 1 : 0);
+    const modVal   = mods[ab] + (profMult * pb);
+    const elId     = 'mod-' + skillIdMap[key];
+    const el       = document.getElementById(elId);
     if (el) el.textContent = formatMod(modVal);
 
     if (key === 'skillPerception') {
-      perceptionMod  = mods['wis'];
-      perceptionProf = hasP;
+      perceptionMod       = mods['wis'];
+      perceptionProf      = hasP || hasExp;
+      perceptionExpertise = hasExp;
     }
   });
 
@@ -222,9 +232,10 @@ function recalcAll() {
   const initEl = document.getElementById('initiative');
   if (initEl) initEl.textContent = formatMod(mods['dex']);
 
-  // Passive Perception = 10 + WIS mod + (prof if perception checked)
+  // Passive Perception = 10 + WIS mod + prof/expertise bonus
   const ppEl = document.getElementById('passive-perception');
-  if (ppEl) ppEl.textContent = 10 + perceptionMod + (perceptionProf ? pb : 0);
+  const ppMult = perceptionExpertise ? 2 : (perceptionProf ? 1 : 0);
+  if (ppEl) ppEl.textContent = 10 + perceptionMod + (ppMult * pb);
 
   // Sanity & Honor mods (optional variant rules)
   const sanityScore = Number(document.querySelector('[data-key="sanityScore"]')?.value) || 0;
@@ -256,6 +267,50 @@ function recalcAll() {
   for (let lvl = 1; lvl <= SPELL_LEVELS; lvl++) {
     rebuildDiamonds(lvl);
   }
+
+  // XP progress bar
+  updateXPBar();
+
+  // Inventory weight
+  calcInventory();
+}
+
+/* ============================================================
+   XP PROGRESS BAR
+   ============================================================ */
+const XP_THRESHOLDS = [
+  0, 0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000,
+  85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000
+];
+
+function updateXPBar() {
+  const level = Math.max(1, Math.min(20, Number(document.getElementById('level')?.value) || 1));
+  const xp = Number(document.getElementById('xp')?.value) || 0;
+
+  const currentThreshold = XP_THRESHOLDS[level] || 0;
+  const nextThreshold = level >= 20 ? XP_THRESHOLDS[20] : (XP_THRESHOLDS[level + 1] || 0);
+  const xpIntoLevel = xp - currentThreshold;
+  const xpNeeded = nextThreshold - currentThreshold;
+  const pct = level >= 20 ? 100 : (xpNeeded > 0 ? Math.min(100, Math.max(0, (xpIntoLevel / xpNeeded) * 100)) : 0);
+
+  const lvlEl = document.getElementById('xp-current-level');
+  const curEl = document.getElementById('xp-current-val');
+  const nextEl = document.getElementById('xp-next-val');
+  const fillEl = document.getElementById('xp-bar-fill');
+  const textEl = document.getElementById('xp-bar-text');
+  const prevLabel = document.getElementById('xp-prev-label');
+  const nextLabel = document.getElementById('xp-next-label');
+
+  if (lvlEl) lvlEl.textContent = level;
+  if (curEl) curEl.textContent = xp.toLocaleString();
+  if (nextEl) nextEl.textContent = level >= 20 ? 'MAX' : nextThreshold.toLocaleString();
+  if (fillEl) {
+    fillEl.style.width = pct + '%';
+    fillEl.classList.toggle('maxed', level >= 20);
+  }
+  if (textEl) textEl.textContent = level >= 20 ? 'MAX LEVEL' : Math.round(pct) + '%';
+  if (prevLabel) prevLabel.textContent = currentThreshold.toLocaleString() + ' XP';
+  if (nextLabel) nextLabel.textContent = level >= 20 ? 'Max Level!' : 'Next: ' + nextThreshold.toLocaleString() + ' XP';
 }
 
 /* ============================================================
@@ -410,6 +465,8 @@ function bindEvents() {
   document.getElementById('import-file').addEventListener('change', importJSON);
   document.getElementById('btn-print').addEventListener('click', () => window.print());
   document.getElementById('btn-theme').addEventListener('click', toggleTheme);
+  document.getElementById('btn-characters').addEventListener('click', openCharacterManager);
+  document.getElementById('btn-pointbuy').addEventListener('click', openPointBuy);
 }
 
 function onAnyInput(e) {
@@ -808,15 +865,10 @@ function escDice(str) {
 /* ============================================================
    EXPERTISE FEATURE
    ============================================================ */
-/* ---------- Expertise Support (Double Proficiency) ----------
- *
- * Skill checkboxes cycle through 3 states on double-click:
- *   - Not proficient (unchecked)
- *   - Proficient (checked, normal style)
- *   - Expertise (checked + data-expertise="true", double proficiency bonus)
- *
- * Integration: Call initExpertise() after DOM ready.
- * The recalcAll() skill section should be updated with the logic below.
+/* Skill checkboxes cycle through 3 states on double-click:
+ *   1. Not proficient (unchecked)
+ *   2. Proficient (checked, green)
+ *   3. Expertise (checked, gold — double proficiency bonus)
  */
 
 function initExpertise() {
@@ -888,55 +940,6 @@ function saveExpertiseData() {
     console.warn('localStorage save failed:', e);
   }
 }
-
-/* ---------- Updated Skill Calculation for recalcAll() ----------
- *
- * Replace the skill modifier calculation block in recalcAll() with this:
- *
- *   Object.keys(skillMap).forEach(key => {
- *     const ab     = skillMap[key];
- *     const checkbox = document.querySelector(`[data-key="${key}"]`);
- *     const hasP   = checkbox ? checkbox.checked : false;
- *     const hasExp = checkbox ? checkbox.dataset.expertise === 'true' : false;
- *     const profMult = hasExp ? 2 : (hasP ? 1 : 0);
- *     const modVal = mods[ab] + (profMult * pb);
- *     const elId   = 'mod-' + skillIdMap[key];
- *     const el     = document.getElementById(elId);
- *     if (el) el.textContent = formatMod(modVal);
- *
- *     if (key === 'skillPerception') {
- *       perceptionMod  = mods['wis'];
- *       perceptionProf = hasP || hasExp;
- *       perceptionExpertise = hasExp;
- *     }
- *   });
- *
- *   // Update passive perception to also account for expertise:
- *   const ppMult = perceptionExpertise ? 2 : (perceptionProf ? 1 : 0);
- *   if (ppEl) ppEl.textContent = 10 + perceptionMod + (ppMult * pb);
- */
-
-/* CSS addition for expertise visual indicator */
-/*
-  .check-mark.expertise {
-    background: var(--accent-gold) !important;
-    border-color: var(--accent-gold) !important;
-  }
-
-  .check-mark.expertise::after {
-    content: '';
-    position: absolute;
-    left: 2px;
-    top: 0;
-    width: 4px;
-    height: 7px;
-    border: 2px solid #1a0a00;
-    border-top: none;
-    border-left: none;
-    transform: rotate(45deg);
-  }
-*/
-
 
 /* ============================================================
    PORTRAIT FEATURE
@@ -1331,7 +1334,7 @@ function calcInventory() {
   }
 }
 
-/* Call buildInventoryRows() in buildDynamicTables() and calcInventory() in recalcAll() */
+
 
 
 /* ============================================================
@@ -1488,270 +1491,3 @@ function saApply() {
   closePointBuy();
 }
 
-
-/* ============================================================
-   DICE ROLLER
-   ============================================================ */
-/* ============================================================
-   DICE ROLLER — Logic
-   Append this to script.js
-   ============================================================ */
-
-const DICE_HISTORY_MAX = 10;
-const DICE_ROLL_ANIM_MS = 400;
-let diceHistory = [];
-
-/* ---------- Initialization (call in DOMContentLoaded or after DOM ready) ---------- */
-function initDiceRoller() {
-  const fab     = document.getElementById('dice-roller-fab');
-  const overlay = document.getElementById('dice-roller-overlay');
-  const closeBtn = document.getElementById('dice-roller-close');
-  const customInput = document.getElementById('dice-custom-input');
-  const customRoll  = document.getElementById('dice-custom-roll');
-  const advBtn      = document.getElementById('dice-adv-btn');
-  const disadvBtn   = document.getElementById('dice-disadv-btn');
-  const clearBtn    = document.getElementById('dice-clear-history');
-
-  if (!fab || !overlay) return;
-
-  fab.addEventListener('click', () => diceTogglePanel(true));
-  closeBtn.addEventListener('click', () => diceTogglePanel(false));
-
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) diceTogglePanel(false);
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !overlay.classList.contains('hidden')) {
-      diceTogglePanel(false);
-    }
-  });
-
-  document.querySelectorAll('.dice-quick-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const die = btn.dataset.die;
-      diceExecuteRoll(`1${die}`);
-    });
-  });
-
-  advBtn.addEventListener('click', () => diceExecuteRoll('2d20kh1', 'Advantage'));
-  disadvBtn.addEventListener('click', () => diceExecuteRoll('2d20kl1', 'Disadvantage'));
-
-  customRoll.addEventListener('click', () => {
-    const notation = customInput.value.trim();
-    if (notation) diceExecuteRoll(notation);
-  });
-
-  customInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      const notation = customInput.value.trim();
-      if (notation) diceExecuteRoll(notation);
-    }
-  });
-
-  clearBtn.addEventListener('click', diceClearHistory);
-}
-
-/* ---------- Panel open/close ---------- */
-function diceTogglePanel(open) {
-  const overlay = document.getElementById('dice-roller-overlay');
-  const fab = document.getElementById('dice-roller-fab');
-  if (!overlay) return;
-
-  if (open) {
-    overlay.classList.remove('hidden');
-    overlay.setAttribute('aria-hidden', 'false');
-    fab.style.display = 'none';
-    document.getElementById('dice-custom-input').focus();
-  } else {
-    overlay.classList.add('hidden');
-    overlay.setAttribute('aria-hidden', 'true');
-    fab.style.display = '';
-  }
-}
-
-/* ---------- Parse & Execute ---------- */
-function diceExecuteRoll(notation, labelOverride) {
-  const parsed = diceParse(notation);
-  if (!parsed) {
-    diceShowResult('Invalid notation', '', '—', notation);
-    return;
-  }
-
-  const resultEl = document.getElementById('dice-result');
-  const totalEl  = document.getElementById('dice-result-total');
-  resultEl.classList.remove('hidden');
-
-  /* Animated rolling phase */
-  totalEl.classList.add('rolling');
-  const label = labelOverride || notation;
-  let flickerCount = 0;
-  const flickerInterval = setInterval(() => {
-    totalEl.textContent = diceRandomFlicker(parsed);
-    flickerCount++;
-    if (flickerCount >= Math.floor(DICE_ROLL_ANIM_MS / 50)) {
-      clearInterval(flickerInterval);
-      totalEl.classList.remove('rolling');
-      diceFinalize(parsed, label, notation);
-    }
-  }, 50);
-}
-
-function diceRandomFlicker(parsed) {
-  let sum = parsed.modifier;
-  for (const group of parsed.groups) {
-    for (let i = 0; i < group.count; i++) {
-      sum += Math.floor(Math.random() * group.sides) + 1;
-    }
-  }
-  return sum;
-}
-
-function diceFinalize(parsed, label, rawNotation) {
-  const results = [];
-
-  for (const group of parsed.groups) {
-    const rolls = [];
-    for (let i = 0; i < group.count; i++) {
-      rolls.push(Math.floor(Math.random() * group.sides) + 1);
-    }
-
-    let kept = rolls.map((v, i) => ({ value: v, index: i, dropped: false }));
-
-    /* keep-highest / keep-lowest logic */
-    if (group.keep !== null) {
-      const sorted = [...kept].sort((a, b) => {
-        return group.keepDir === 'h' ? b.value - a.value : a.value - b.value;
-      });
-      const keepCount = Math.min(group.keep, kept.length);
-      const keepIndices = new Set(sorted.slice(0, keepCount).map(r => r.index));
-      kept.forEach(r => {
-        r.dropped = !keepIndices.has(r.index);
-      });
-    }
-
-    results.push({ sides: group.sides, rolls: kept });
-  }
-
-  /* Compute total */
-  let total = parsed.modifier;
-  const allDice = [];
-  for (const group of results) {
-    for (const r of group.rolls) {
-      if (!r.dropped) total += r.value;
-      allDice.push({ ...r, sides: group.sides });
-    }
-  }
-
-  /* Build individual dice HTML */
-  const indivHtml = allDice.map(d => {
-    let cls = 'die-val';
-    if (d.dropped) cls += ' die-val--dropped';
-    else if (d.sides === 20 && d.value === 20) cls += ' die-val--crit';
-    else if (d.sides === 20 && d.value === 1)  cls += ' die-val--fumble';
-    return `<span class="${cls}">${d.value}</span>`;
-  }).join('');
-
-  const modStr = parsed.modifier !== 0
-    ? ` ${parsed.modifier > 0 ? '+' : ''}${parsed.modifier}`
-    : '';
-
-  diceShowResult(label, indivHtml + (modStr ? `<span class="die-val">${modStr}</span>` : ''), total, rawNotation);
-  diceAddHistory(rawNotation, label, total);
-}
-
-function diceShowResult(label, indivHtml, total, rawNotation) {
-  document.getElementById('dice-result').classList.remove('hidden');
-  document.getElementById('dice-result-label').textContent = label;
-  document.getElementById('dice-result-individual').innerHTML = indivHtml;
-  document.getElementById('dice-result-total').textContent = total;
-}
-
-/* ---------- Parser ----------
-   Supports: NdS, NdS+M, NdS-M, NdSkhK, NdSklK, multiple groups via "+"
-   Examples: 2d6+3, 4d6kh3, 1d20+5, 2d20kl1, 1d8+1d6+3, d20           */
-function diceParse(notation) {
-  const input = notation.toLowerCase().replace(/\s+/g, '');
-  if (!input) return null;
-
-  /* Split on + or - but keep the sign as a token */
-  const tokens = input.match(/[+-]?[^+-]+/g);
-  if (!tokens) return null;
-
-  const groups = [];
-  let modifier = 0;
-
-  for (const token of tokens) {
-    const sign = token.startsWith('-') ? -1 : 1;
-    const clean = token.replace(/^[+-]/, '');
-
-    /* Dice pattern: (N)d(S)(kh|kl)(K) */
-    const diceMatch = clean.match(/^(\d*)d(\d+)(?:(kh|kl)(\d+))?$/);
-    if (diceMatch) {
-      const count = diceMatch[1] ? parseInt(diceMatch[1], 10) : 1;
-      const sides = parseInt(diceMatch[2], 10);
-      const keepDir = diceMatch[3] ? diceMatch[3][1] : null;       // 'h' or 'l'
-      const keepNum = diceMatch[4] ? parseInt(diceMatch[4], 10) : null;
-
-      if (count < 1 || count > 100 || sides < 1 || sides > 1000) return null;
-      if (keepNum !== null && (keepNum < 1 || keepNum > count)) return null;
-
-      groups.push({
-        count,
-        sides,
-        keep: keepNum,
-        keepDir,
-        sign,
-      });
-    } else if (/^\d+$/.test(clean)) {
-      modifier += sign * parseInt(clean, 10);
-    } else {
-      return null; // invalid token
-    }
-  }
-
-  if (groups.length === 0) return null;
-  return { groups, modifier };
-}
-
-/* ---------- History ---------- */
-function diceAddHistory(rawNotation, label, total) {
-  const now = new Date();
-  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-  diceHistory.unshift({ notation: label, total, time });
-  if (diceHistory.length > DICE_HISTORY_MAX) diceHistory.pop();
-
-  diceRenderHistory();
-}
-
-function diceRenderHistory() {
-  const list = document.getElementById('dice-history');
-  if (!list) return;
-  list.innerHTML = '';
-
-  for (const entry of diceHistory) {
-    const li = document.createElement('li');
-    li.className = 'dice-history-item';
-    li.innerHTML = `
-      <span class="dice-history-time">${entry.time}</span>
-      <span class="dice-history-notation">${escDice(entry.notation)}</span>
-      <span class="dice-history-result">= ${entry.total}</span>
-    `;
-    list.appendChild(li);
-  }
-}
-
-function diceClearHistory() {
-  diceHistory = [];
-  diceRenderHistory();
-  const resultEl = document.getElementById('dice-result');
-  if (resultEl) resultEl.classList.add('hidden');
-}
-
-/* HTML-escape helper for history entries */
-function escDice(str) {
-  const d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
-}
