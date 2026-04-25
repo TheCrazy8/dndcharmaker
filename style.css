@@ -556,6 +556,25 @@ input.combat-value {
 .large-check .check-mark { width: 28px; height: 28px; border-radius: 4px; }
 .large-check .check-mark::after { left: 7px !important; top: 2px !important; width: 8px !important; height: 14px !important; }
 
+/* Expertise visual indicator — gold background for double-proficiency skills */
+.check-mark.expertise {
+  background: var(--accent-gold) !important;
+  border-color: var(--accent-gold) !important;
+}
+
+.check-mark.expertise::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0;
+  width: 4px;
+  height: 7px;
+  border: 2px solid #1a0a00;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
 /* ---------- Heroic Inspiration ---------- */
 .inspiration-section { text-align: center; }
 
