@@ -291,9 +291,9 @@ function buildDynamicTables() {
 
 function ordinal(n) {
   // Special case for teens (11th, 12th, 13th) before checking last digit
-  if (n % 100 >= 11 && n % 100 <= 13) return `${n}th`;
-  const s = ['th','st','nd','rd'];
-  return `${n}${s[n % 10] || 'th'}`;
+  if (n % 100 >= 11 && n % 100 <= 13) return 'th';
+  const s = ['th', 'st', 'nd', 'rd'];
+  return s[n % 10] || 'th';
 }
 
 /* ============================================================
