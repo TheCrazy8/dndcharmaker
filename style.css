@@ -3201,6 +3201,112 @@ body.dark-mode .condition-toggle input:checked + .condition-btn {
 }
 
 /* ============================================================
+   MONSTER BROWSER
+   ============================================================ */
+.monster-row {
+  border-bottom: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.monster-row:last-child { border-bottom: none; }
+.monster-row:hover,
+.monster-row--open { background: var(--bg-table-alt); }
+
+.monster-row-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.8rem;
+  flex-wrap: wrap;
+}
+.monster-name {
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+.monster-meta {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-style: italic;
+  flex: 1;
+}
+
+/* Detail stat block (hidden by default) */
+.monster-detail {
+  padding: 0 0.8rem 0.6rem;
+  border-top: 1px dashed var(--border-light);
+}
+.monster-detail.hidden { display: none; }
+
+.monster-stat-block { font-size: 0.8rem; color: var(--text-primary); }
+
+.monster-sb-type {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-bottom: 0.35rem;
+}
+
+.monster-sb-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.2rem;
+  margin-bottom: 0.4rem;
+}
+.monster-stat-row {
+  display: flex;
+  gap: 0.3rem;
+}
+.monster-stat-label {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.76rem;
+  color: var(--text-heading);
+}
+.monster-stat-val {
+  font-size: 0.78rem;
+  color: var(--text-primary);
+}
+
+.monster-sb-abilities {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.4rem;
+}
+.monster-sb-ability {
+  background: var(--bg-ability);
+  color: var(--text-inverse);
+  border-radius: var(--radius);
+  padding: 0.2rem 0.5rem;
+  text-align: center;
+  min-width: 2.8rem;
+}
+.monster-sb-ab-label {
+  font-family: var(--font-heading);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.monster-sb-ab-score {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.monster-sb-ab-mod {
+  font-size: 0.65rem;
+  opacity: 0.85;
+}
+
+.monster-sb-notes {
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+}
+
+/* ============================================================
    Print: hide SRD modals/popups
    ============================================================ */
 @media print {

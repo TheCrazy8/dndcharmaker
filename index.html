@@ -25,6 +25,7 @@
       <button id="btn-characters" class="action-btn" title="Manage Characters">👤 Characters</button>
       <button id="btn-pointbuy" class="action-btn" title="Point Buy Calculator">🧮 Point Buy</button>
       <button id="btn-rules" class="action-btn" title="SRD Rules Reference">📚 Rules</button>
+      <button id="btn-monsters" class="action-btn" title="Monster Browser">🐉 Monsters</button>
       <label class="action-btn" title="Load optional source data from local JSON files (not stored in repo). Multiple files may be selected at once.">
         📗 Load Sources
         <input type="file" id="source-files" accept=".json" multiple style="display:none" />
@@ -1467,6 +1468,37 @@
       </div>
       <div class="srd-list" id="rules-conditions-list"></div>
       <div class="srd-list hidden" id="rules-actions-list"></div>
+    </div>
+  </div>
+
+  <!-- Monster Browser Modal -->
+  <div id="monster-browser-overlay" class="srd-overlay hidden" aria-hidden="true">
+    <div class="srd-panel srd-panel--wide" role="dialog" aria-label="Monster Browser">
+      <div class="srd-panel-header">
+        <h2 class="srd-panel-title">🐉 Monster Browser</h2>
+        <button class="srd-panel-close" onclick="closeMonsterBrowser()" title="Close">&times;</button>
+      </div>
+      <div class="srd-panel-filters">
+        <input type="text" id="monster-search" class="srd-search" placeholder="Search monsters…" oninput="filterMonsters()" />
+        <input type="text" id="monster-type-filter" class="srd-search" placeholder="Filter by type…" oninput="filterMonsters()" style="flex:0 1 130px" />
+        <select id="monster-cr-filter" class="srd-filter-select" onchange="filterMonsters()">
+          <option value="">All CRs</option>
+          <option>0</option><option>1/8</option><option>1/4</option><option>1/2</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option>
+          <option>5</option><option>6</option><option>7</option><option>8</option>
+          <option>9</option><option>10</option><option>11</option><option>12</option>
+          <option>13</option><option>14</option><option>15</option><option>16</option>
+          <option>17</option><option>18</option><option>19</option><option>20</option>
+          <option>21</option><option>22</option><option>23</option><option>24</option>
+          <option>25</option><option>26</option><option>27</option><option>28</option>
+          <option>29</option><option>30</option>
+        </select>
+        <select id="monster-source-filter" class="srd-filter-select" onchange="filterMonsters()">
+          <option value="">All Sources</option>
+        </select>
+      </div>
+      <p class="srd-browser-hint">Click a monster to expand its stat block. Load source files with 📗 Load Sources to populate this list.</p>
+      <div class="srd-list" id="monster-browser-list"></div>
     </div>
   </div>
 
