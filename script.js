@@ -554,12 +554,8 @@ function applyData(data) {
    BIND EVENTS
    ============================================================ */
 function bindEvents() {
-  // Tab navigation
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => switchPage(btn.dataset.page));
-  });
 
-  // All inputs → recalc + save
+// All inputs → recalc + save
   document.addEventListener('input', onAnyInput);
   document.addEventListener('change', onAnyChange);
 
@@ -623,25 +619,6 @@ function onAnyChange(e) {
   saveToStorage();
 }
 
-/* ============================================================
-   TAB NAVIGATION
-   ============================================================ */
-function switchPage(pageId) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => {
-    b.classList.remove('active');
-    b.setAttribute('aria-selected', 'false');
-  });
-
-  const page = document.getElementById(pageId);
-  if (page) page.classList.add('active');
-
-  const btn = document.querySelector(`.tab-btn[data-page="${pageId}"]`);
-  if (btn) {
-    btn.classList.add('active');
-    btn.setAttribute('aria-selected', 'true');
-  }
-}
 
 /* ============================================================
    NEW CHARACTER
@@ -1824,9 +1801,6 @@ function applySpell(spellIdx) {
 
   saveToStorage();
   closeSpellBrowser();
-
-  // Switch to spellcasting page so the user sees the filled row
-  switchPage('page3');
 }
 
 /* ============================================================

@@ -12,12 +12,7 @@
   <!-- Top Toolbar -->
   <header class="toolbar">
     <div class="toolbar-title">⚔️ D&amp;D 5e Character Sheet</div>
-    <nav class="tab-nav" role="tablist">
-      <button class="tab-btn active" data-page="page1" role="tab" aria-selected="true">📜 Main Sheet</button>
-      <button class="tab-btn" data-page="page2" role="tab" aria-selected="false">📖 Additional Info</button>
-      <button class="tab-btn" data-page="page3" role="tab" aria-selected="false">✨ Spellcasting</button>
-      <button class="tab-btn" data-page="page4" role="tab" aria-selected="false">📝 Notes</button>
-    </nav>
+
     <div class="toolbar-actions">
       <button id="btn-new" class="action-btn" title="New Character">🆕 New</button>
       <button id="btn-export" class="action-btn" title="Export to JSON">💾 Export</button>
@@ -42,7 +37,7 @@
     <!-- ============================================================ -->
     <!-- PAGE 1: MAIN CHARACTER SHEET                                 -->
     <!-- ============================================================ -->
-    <section id="page1" class="page active" role="tabpanel">
+    <section id="page1" class="page" role="region" aria-label="Main Sheet">
 
       <!-- Header Row -->
       <div class="section header-section">
@@ -799,7 +794,7 @@
     <!-- ============================================================ -->
     <!-- PAGE 2: ADDITIONAL INFO                                      -->
     <!-- ============================================================ -->
-    <section id="page2" class="page" role="tabpanel">
+    <section id="page2" class="page" role="region" aria-label="Additional Info">
       <div class="page-columns">
         <!-- Left side -->
         <div class="page-col">
@@ -932,7 +927,7 @@
     <!-- ============================================================ -->
     <!-- PAGE 3: SPELLCASTING & EQUIPMENT                             -->
     <!-- ============================================================ -->
-    <section id="page3" class="page" role="tabpanel">
+    <section id="page3" class="page" role="region" aria-label="Spellcasting">
       <div class="page-columns">
         <!-- Left side: Spellcasting -->
         <div class="page-col spell-col">
@@ -1138,7 +1133,7 @@
     <!-- ============================================================ -->
     <!-- PAGE 4: NOTES                                                -->
     <!-- ============================================================ -->
-    <section id="page4" class="page" role="tabpanel">
+    <section id="page4" class="page" role="region" aria-label="Notes">
       <div class="section notes-section">
         <h3 class="section-title">Notes</h3>
         <textarea id="notes" data-key="notes" class="notes-textarea" placeholder="Free-form notes, session logs, reminders…"></textarea>
