@@ -25,9 +25,9 @@
       <button id="btn-characters" class="action-btn" title="Manage Characters">👤 Characters</button>
       <button id="btn-pointbuy" class="action-btn" title="Point Buy Calculator">🧮 Point Buy</button>
       <button id="btn-rules" class="action-btn" title="SRD Rules Reference">📚 Rules</button>
-      <label class="action-btn" title="Load optional PHB content from a local JSON file (not stored in repo)">
-        📗 PHB Data
-        <input type="file" id="phb-file" accept=".json" style="display:none" />
+      <label class="action-btn" title="Load optional source data from local JSON files (not stored in repo). Multiple files may be selected at once.">
+        📗 Load Sources
+        <input type="file" id="source-files" accept=".json" multiple style="display:none" />
       </label>
     </div>
   </header>
@@ -1428,7 +1428,6 @@
         <select id="spell-source-filter" class="srd-filter-select" onchange="filterSpells()">
           <option value="">All Sources</option>
           <option value="SRD">SRD</option>
-          <option value="PHB">PHB</option>
         </select>
       </div>
       <p class="srd-browser-hint">Click a spell to fill the next empty row in your spell list.</p>
@@ -1448,7 +1447,6 @@
         <select id="feat-source-filter" class="srd-filter-select" onchange="filterFeats()">
           <option value="">All Sources</option>
           <option value="SRD">SRD</option>
-          <option value="PHB">PHB</option>
         </select>
       </div>
       <p class="srd-browser-hint">Click a feat to append it to your Feats section.</p>
