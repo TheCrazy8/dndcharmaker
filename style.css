@@ -2841,3 +2841,397 @@ body.dark-mode .condition-toggle input:checked + .condition-btn {
     font-size: 1.3rem;
   }
 }
+
+/* ============================================================
+   SRD PRESETS — shared layout helpers
+   ============================================================ */
+
+/* Inline wrapper for input + preset button side by side */
+.input-with-btn {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  flex: 1;
+}
+.input-with-btn input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Small inline preset button (subclass) */
+.preset-inline-btn {
+  font-family: var(--font-heading);
+  font-size: 0.7rem;
+  padding: 0.3rem 0.55rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius);
+  color: var(--text-heading);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition), border-color var(--transition);
+  flex-shrink: 0;
+}
+.preset-inline-btn:hover {
+  background: var(--bg-table-alt);
+  border-color: var(--accent-gold);
+}
+
+/* Section title row (title + browse button on same line) */
+.section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.section-title-row .section-title {
+  margin-bottom: 0;
+}
+
+/* Section-level browse button (spells, feats) */
+.preset-section-btn {
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  padding: 0.3rem 0.65rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius);
+  color: var(--text-heading);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition), border-color var(--transition);
+}
+.preset-section-btn:hover {
+  background: var(--bg-table-alt);
+  border-color: var(--accent-gold);
+}
+
+/* ============================================================
+   SRD PRESETS — Subclass popup
+   ============================================================ */
+.srd-popup {
+  position: absolute;
+  z-index: 500;
+  background: var(--bg-section);
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 6px 24px var(--shadow);
+  min-width: 200px;
+  max-width: 280px;
+  overflow: hidden;
+}
+.srd-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.7rem;
+  background: var(--bg-ability);
+  border-bottom: 1px solid var(--border-dark);
+}
+.srd-popup-title {
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  color: var(--text-inverse);
+  font-weight: 600;
+}
+.srd-popup-close {
+  background: none;
+  border: none;
+  color: var(--text-inverse);
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 0.2rem;
+  opacity: 0.8;
+}
+.srd-popup-close:hover { opacity: 1; }
+.srd-popup-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 0.3rem 0;
+}
+.srd-popup-item {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  text-align: left;
+  padding: 0.45rem 0.9rem;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.srd-popup-item:hover {
+  background: var(--bg-table-alt);
+  color: var(--text-heading);
+}
+.srd-popup-empty {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding: 0.6rem 0.9rem;
+  font-style: italic;
+}
+
+/* ============================================================
+   SRD PRESETS — shared modal overlay + panel
+   ============================================================ */
+.srd-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2.5rem 1rem 1rem;
+  overflow-y: auto;
+}
+.srd-panel {
+  background: var(--bg-section);
+  border: 2px solid var(--border-dark);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px var(--shadow);
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  max-height: 82vh;
+  overflow: hidden;
+}
+.srd-panel--wide {
+  max-width: 720px;
+}
+.srd-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem;
+  background: var(--bg-ability);
+  border-bottom: 2px solid var(--border-dark);
+  flex-shrink: 0;
+}
+.srd-panel-title {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  color: var(--text-inverse);
+  margin: 0;
+}
+.srd-panel-close {
+  background: none;
+  border: none;
+  color: var(--text-inverse);
+  font-size: 1.3rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 0.2rem;
+  opacity: 0.8;
+  transition: opacity var(--transition);
+}
+.srd-panel-close:hover { opacity: 1; }
+
+/* Filters row */
+.srd-panel-filters {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--bg-page);
+  border-bottom: 1px solid var(--border-light);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.srd-search {
+  flex: 1 1 160px;
+  min-width: 0;
+  padding: 0.35rem 0.6rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+}
+.srd-filter-select {
+  padding: 0.35rem 0.5rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+}
+
+.srd-browser-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 0.35rem 0.8rem;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+/* Scrollable list area */
+.srd-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 0.4rem 0;
+}
+.srd-empty {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 1rem;
+  text-align: center;
+}
+
+/* ============================================================
+   SRD PRESETS — Spell rows
+   ============================================================ */
+.srd-spell-row {
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-light);
+  transition: background var(--transition);
+}
+.srd-spell-row:last-child { border-bottom: none; }
+.srd-spell-row:hover { background: var(--bg-table-alt); }
+
+.srd-spell-main {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+.srd-spell-lvl {
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-inverse);
+  background: var(--bg-ability);
+  border-radius: 3px;
+  padding: 0.05rem 0.35rem;
+  min-width: 1.4rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+.srd-spell-name {
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+.srd-spell-school {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.srd-spell-comp {
+  font-family: var(--font-heading);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+.srd-spell-meta {
+  display: flex;
+  gap: 0.8rem;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+  flex-wrap: wrap;
+}
+.srd-tag {
+  font-size: 0.65rem;
+  font-family: var(--font-heading);
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.srd-tag--conc   { background: #1a4a6a22; color: var(--text-mod); border: 1px solid var(--text-mod); }
+.srd-tag--ritual { background: #1a5c1a22; color: var(--accent-green); border: 1px solid var(--accent-green); }
+
+/* ============================================================
+   SRD PRESETS — Feat rows
+   ============================================================ */
+.srd-feat-row {
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-light);
+  transition: background var(--transition);
+}
+.srd-feat-row:last-child { border-bottom: none; }
+.srd-feat-row:hover { background: var(--bg-table-alt); }
+
+.srd-feat-name {
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-heading);
+  margin-bottom: 0.15rem;
+}
+.srd-feat-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+/* ============================================================
+   SRD PRESETS — Rules reference cards
+   ============================================================ */
+.srd-rules-tabs {
+  display: flex;
+  border-bottom: 2px solid var(--border-dark);
+  flex-shrink: 0;
+}
+.srd-rules-tab {
+  font-family: var(--font-heading);
+  font-size: 0.82rem;
+  padding: 0.55rem 1.1rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: color var(--transition), border-color var(--transition);
+}
+.srd-rules-tab:hover  { color: var(--text-heading); }
+.srd-rules-tab.active { color: var(--accent-gold); border-bottom-color: var(--accent-gold); }
+
+.srd-rule-card {
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid var(--border-light);
+}
+.srd-rule-card:last-child { border-bottom: none; }
+.srd-rule-name {
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  margin-bottom: 0.2rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.srd-rule-type {
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.srd-rule-desc {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* ============================================================
+   Print: hide SRD modals/popups
+   ============================================================ */
+@media print {
+  .srd-overlay,
+  .srd-popup,
+  .preset-inline-btn,
+  .preset-section-btn { display: none !important; }
+}

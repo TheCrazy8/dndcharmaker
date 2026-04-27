@@ -29,6 +29,7 @@
       <button id="btn-theme" class="action-btn" title="Toggle Dark/Light Mode">🌙 Dark</button>
       <button id="btn-characters" class="action-btn" title="Manage Characters">👤 Characters</button>
       <button id="btn-pointbuy" class="action-btn" title="Point Buy Calculator">🧮 Point Buy</button>
+      <button id="btn-rules" class="action-btn" title="SRD Rules Reference">📚 Rules</button>
     </div>
   </header>
 
@@ -122,7 +123,10 @@
           </div>
           <div class="field-group">
             <label for="subclass">Subclass</label>
-            <input type="text" id="subclass" data-key="subclass" placeholder="e.g. Evocation" />
+            <div class="input-with-btn">
+              <input type="text" id="subclass" data-key="subclass" placeholder="e.g. Evocation" />
+              <button type="button" class="preset-inline-btn" id="btn-subclass-presets" title="Browse SRD subclasses for selected class" onclick="openSubclassPresets()">📋 Presets</button>
+            </div>
           </div>
           <div class="field-group narrow">
             <label for="level">Level</label>
@@ -776,7 +780,10 @@
               <textarea id="species-traits" data-key="speciesTraits" rows="6" placeholder="List species traits…"></textarea>
             </div>
             <div class="section">
-              <h3 class="section-title">Feats</h3>
+              <div class="section-title-row">
+                <h3 class="section-title">Feats</h3>
+                <button type="button" class="preset-section-btn" onclick="openFeatBrowser()" title="Browse SRD feats and add to this list">📜 Browse SRD</button>
+              </div>
               <textarea id="feats" data-key="feats" rows="6" placeholder="List feats…"></textarea>
             </div>
           </div>
@@ -995,7 +1002,10 @@
 
           <!-- Cantrips & Prepared Spells -->
           <div class="section">
-            <h3 class="section-title">Cantrips &amp; Prepared Spells</h3>
+            <div class="section-title-row">
+              <h3 class="section-title">Cantrips &amp; Prepared Spells</h3>
+              <button type="button" class="preset-section-btn" onclick="openSpellBrowser()" title="Browse SRD spells and autofill a row">📖 Browse SRD</button>
+            </div>
             <div class="table-wrapper spells-wrapper">
               <table class="spells-table">
                 <thead>
@@ -1367,6 +1377,91 @@
 <!-- <button class="action-btn" onclick="openPointBuy()" title="Point Buy / Standard Array">🎯 Point Buy</button> -->
 
 
+  <script src="srd-data.js"></script>
   <script src="script.js"></script>
+
+  <!-- ============================================================ -->
+  <!-- SRD MODALS                                                   -->
+  <!-- ============================================================ -->
+
+  <!-- Subclass Presets Popup -->
+  <div id="subclass-popup" class="srd-popup hidden" role="dialog" aria-label="Subclass Presets">
+    <div class="srd-popup-header">
+      <span class="srd-popup-title" id="subclass-popup-title">Subclasses</span>
+      <button class="srd-popup-close" onclick="closeSubclassPresets()" title="Close">&times;</button>
+    </div>
+    <div class="srd-popup-list" id="subclass-popup-list"></div>
+  </div>
+
+  <!-- Spell Browser Modal -->
+  <div id="spell-browser-overlay" class="srd-overlay hidden" aria-hidden="true">
+    <div class="srd-panel" role="dialog" aria-label="SRD Spell Browser">
+      <div class="srd-panel-header">
+        <h2 class="srd-panel-title">📖 SRD Spell Browser</h2>
+        <button class="srd-panel-close" onclick="closeSpellBrowser()" title="Close">&times;</button>
+      </div>
+      <div class="srd-panel-filters">
+        <input type="text" id="spell-search" class="srd-search" placeholder="Search spells…" oninput="filterSpells()" />
+        <select id="spell-level-filter" class="srd-filter-select" onchange="filterSpells()">
+          <option value="">All Levels</option>
+          <option value="0">Cantrips</option>
+          <option value="1">1st Level</option>
+          <option value="2">2nd Level</option>
+          <option value="3">3rd Level</option>
+          <option value="4">4th Level</option>
+          <option value="5">5th Level</option>
+          <option value="6">6th Level</option>
+          <option value="7">7th Level</option>
+          <option value="8">8th Level</option>
+          <option value="9">9th Level</option>
+        </select>
+        <select id="spell-school-filter" class="srd-filter-select" onchange="filterSpells()">
+          <option value="">All Schools</option>
+          <option>Abjuration</option>
+          <option>Conjuration</option>
+          <option>Divination</option>
+          <option>Enchantment</option>
+          <option>Evocation</option>
+          <option>Illusion</option>
+          <option>Necromancy</option>
+          <option>Transmutation</option>
+        </select>
+      </div>
+      <p class="srd-browser-hint">Click a spell to fill the next empty row in your spell list.</p>
+      <div class="srd-list" id="spell-browser-list"></div>
+    </div>
+  </div>
+
+  <!-- Feat Browser Modal -->
+  <div id="feat-browser-overlay" class="srd-overlay hidden" aria-hidden="true">
+    <div class="srd-panel" role="dialog" aria-label="SRD Feat Browser">
+      <div class="srd-panel-header">
+        <h2 class="srd-panel-title">📜 SRD Feat Browser</h2>
+        <button class="srd-panel-close" onclick="closeFeatBrowser()" title="Close">&times;</button>
+      </div>
+      <div class="srd-panel-filters">
+        <input type="text" id="feat-search" class="srd-search" placeholder="Search feats…" oninput="filterFeats()" />
+      </div>
+      <p class="srd-browser-hint">Click a feat to append it to your Feats section.</p>
+      <div class="srd-list" id="feat-browser-list"></div>
+    </div>
+  </div>
+
+  <!-- Rules Reference Modal -->
+  <div id="rules-overlay" class="srd-overlay hidden" aria-hidden="true">
+    <div class="srd-panel srd-panel--wide" role="dialog" aria-label="SRD Rules Reference">
+      <div class="srd-panel-header">
+        <h2 class="srd-panel-title">📚 SRD Rules Reference</h2>
+        <button class="srd-panel-close" onclick="closeRulesRef()" title="Close">&times;</button>
+      </div>
+      <div class="srd-rules-tabs">
+        <button class="srd-rules-tab active" data-tab="conditions" onclick="switchRulesTab('conditions')">Conditions</button>
+        <button class="srd-rules-tab" data-tab="actions" onclick="switchRulesTab('actions')">Combat Actions</button>
+      </div>
+      <div class="srd-list" id="rules-conditions-list"></div>
+      <div class="srd-list hidden" id="rules-actions-list"></div>
+    </div>
+  </div>
+
 </body>
 </html>
