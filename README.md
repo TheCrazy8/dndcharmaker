@@ -73,3 +73,68 @@ README.md    — This file
 ## 📜 License
 
 This project is open source. Feel free to fork, customize, and share!
+
+---
+
+## 📗 Optional PHB Content
+
+### Why PHB content is not included
+
+The *Player's Handbook* (PHB) is a copyrighted work by Wizards of the Coast and is **not** covered by the [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) licence that governs the SRD 5.1 data bundled in `srd-data.js`. Including PHB spells, feats, or subclasses directly in this repository would violate that copyright.
+
+### How to load your own PHB data locally
+
+The app ships a **"📗 PHB Data"** button in the toolbar. Clicking it lets you load a local `.json` file whose data is injected into the Spell Browser, Feat Browser, and Subclass picker at runtime — **nothing is ever uploaded or stored on a server.**
+
+#### JSON file format
+
+```json
+{
+  "spells": [
+    {
+      "n":  "Spell Name",
+      "l":  1,
+      "s":  "Evocation",
+      "ct": "1 Action",
+      "r":  "60 ft.",
+      "d":  "Instantaneous",
+      "c":  false,
+      "ri": false,
+      "co": "VS"
+    }
+  ],
+  "feats": [
+    {
+      "name": "Feat Name",
+      "desc": "One-line description of the feat."
+    }
+  ],
+  "subclasses": {
+    "Fighter": ["Echo Knight", "Psi Warrior"],
+    "Wizard":  ["Bladesinging", "Order of Scribes"]
+  }
+}
+```
+
+| Field | Type | Notes |
+|---|---|---|
+| `spells[*].n` | string | Spell name (**required**) |
+| `spells[*].l` | number | Level 0 = cantrip (**required**) |
+| `spells[*].s` | string | School of magic |
+| `spells[*].ct` | string | Casting time |
+| `spells[*].r` | string | Range |
+| `spells[*].d` | string | Duration |
+| `spells[*].c` | boolean | Requires concentration |
+| `spells[*].ri` | boolean | Can be cast as ritual |
+| `spells[*].co` | string | Components (`V`, `S`, `M`, `VS`, `VSM`, …) |
+| `feats[*].name` | string | Feat name (**required**) |
+| `feats[*].desc` | string | Description (**required**) |
+| `subclasses` | object | Maps class name → array of subclass name strings |
+
+All three top-level keys are **optional** — you can provide only the sections you need.
+
+### What happens without PHB data
+
+The app works exactly as before: only SRD 5.1 content is shown. The "📗 PHB Data" button is always visible but has no effect until you load a file. You can use the **Source** filter dropdown (All Sources / SRD / PHB) in the Spell Browser and Feat Browser to narrow results once PHB data is loaded.
+
+> **Important:** You are responsible for ensuring any data you load locally complies with the applicable licences. This project does not endorse or facilitate copyright infringement.
