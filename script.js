@@ -1562,6 +1562,7 @@ function openSubclassPresets() {
   const list  = document.getElementById('subclass-popup-list');
   const title = document.getElementById('subclass-popup-title');
   if (!popup || !list) return;
+  if (typeof SRD_SUBCLASSES === 'undefined') return;
 
   const cls     = document.getElementById('main-class')?.value || '';
   const options = SRD_SUBCLASSES[cls];
@@ -1569,7 +1570,7 @@ function openSubclassPresets() {
   title.textContent = cls ? `${cls} Subclasses` : 'Subclasses';
 
   if (!options || options.length === 0) {
-    list.innerHTML = `<p class="srd-popup-empty">${cls ? 'No SRD subclasses for ' + cls + '.' : 'Select a class first.'}</p>`;
+    list.innerHTML = `<p class="srd-popup-empty">${cls ? 'No SRD subclasses for ' + escSrd(cls) + '.' : 'Select a class first.'}</p>`;
   } else {
     list.innerHTML = options.map(sub =>
       `<button class="srd-popup-item" onclick="applySubclass(${JSON.stringify(sub)})">${sub}</button>`
@@ -1607,7 +1608,8 @@ function openSpellBrowser() {
   document.getElementById('spell-search').value = '';
   document.getElementById('spell-level-filter').value = '';
   document.getElementById('spell-school-filter').value = '';
-  renderSpellList(SRD_SPELLS);
+  // Build full indexed list once
+  renderSpellList(SRD_SPELLS.map((sp, idx) => ({ sp, idx })));
   overlay.classList.remove('hidden');
   overlay.setAttribute('aria-hidden', 'false');
   document.getElementById('spell-search').focus();
@@ -1625,12 +1627,15 @@ function filterSpells() {
   const level  = document.getElementById('spell-level-filter').value;
   const school = document.getElementById('spell-school-filter').value;
 
-  const filtered = SRD_SPELLS.filter(sp => {
-    if (level  !== '' && String(sp.l) !== level)               return false;
-    if (school !== '' && sp.s !== school)                       return false;
-    if (query  !== '' && !sp.n.toLowerCase().includes(query))  return false;
-    return true;
-  });
+  // Keep track of original index alongside each spell to avoid indexOf() in render
+  const filtered = SRD_SPELLS
+    .map((sp, idx) => ({ sp, idx }))
+    .filter(({ sp }) => {
+      if (level  !== '' && String(sp.l) !== level)               return false;
+      if (school !== '' && sp.s !== school)                       return false;
+      if (query  !== '' && !sp.n.toLowerCase().includes(query))  return false;
+      return true;
+    });
   renderSpellList(filtered);
 }
 
@@ -1642,11 +1647,11 @@ function renderSpellList(spells) {
     return;
   }
   const levelLabel = l => l === 0 ? 'C' : String(l);
-  list.innerHTML = spells.map(sp => {
+  list.innerHTML = spells.map(({ sp, idx }) => {
     const tags = [];
     if (sp.c)  tags.push('<span class="srd-tag srd-tag--conc">Conc.</span>');
     if (sp.ri) tags.push('<span class="srd-tag srd-tag--ritual">Ritual</span>');
-    return `<div class="srd-spell-row" onclick="applySpell(${SRD_SPELLS.indexOf(sp)})">
+    return `<div class="srd-spell-row" onclick="applySpell(${idx})">
       <div class="srd-spell-main">
         <span class="srd-spell-lvl">${levelLabel(sp.l)}</span>
         <span class="srd-spell-name">${escSrd(sp.n)}</span>
@@ -1667,10 +1672,14 @@ function applySpell(spellIdx) {
   const sp = SRD_SPELLS[spellIdx];
   if (!sp) return;
 
+  // Build a key→element map from all data-key inputs once
+  const keyMap = {};
+  document.querySelectorAll('[data-key]').forEach(el => { keyMap[el.dataset.key] = el; });
+
   // Find the first row where the spell name is empty
   let targetRow = -1;
   for (let i = 0; i < SPELL_ROWS; i++) {
-    const nameEl = document.querySelector(`[data-key="spellName${i}"]`);
+    const nameEl = keyMap[`spellName${i}`];
     if (nameEl && nameEl.value.trim() === '') { targetRow = i; break; }
   }
   if (targetRow === -1) {
@@ -1680,7 +1689,7 @@ function applySpell(spellIdx) {
 
   const levelLabel = sp.l === 0 ? 'C' : String(sp.l);
   const set = (key, val) => {
-    const el = document.querySelector(`[data-key="${key}"]`);
+    const el = keyMap[key];
     if (!el) return;
     if (el.type === 'checkbox') el.checked = Boolean(val);
     else el.value = val;
@@ -1806,8 +1815,7 @@ function switchRulesTab(tab) {
 }
 
 /* Shared HTML-escape helper for SRD content */
+const ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 function escSrd(str) {
-  const d = document.createElement('div');
-  d.textContent = String(str);
-  return d.innerHTML;
+  return String(str).replace(/[&<>"']/g, m => ESC_MAP[m]);
 }
