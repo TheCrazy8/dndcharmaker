@@ -470,6 +470,32 @@ function bindEvents() {
   document.getElementById('btn-theme').addEventListener('click', toggleTheme);
   document.getElementById('btn-characters').addEventListener('click', openCharacterManager);
   document.getElementById('btn-pointbuy').addEventListener('click', openPointBuy);
+  document.getElementById('btn-rules').addEventListener('click', openRulesRef);
+
+  // Close SRD overlays on backdrop click
+  ['spell-browser-overlay', 'feat-browser-overlay', 'rules-overlay'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', e => { if (e.target === el) el.classList.add('hidden'); });
+  });
+
+  // Close subclass popup on outside click
+  document.addEventListener('click', e => {
+    const popup = document.getElementById('subclass-popup');
+    const btn   = document.getElementById('btn-subclass-presets');
+    if (popup && !popup.classList.contains('hidden') &&
+        !popup.contains(e.target) && e.target !== btn) {
+      popup.classList.add('hidden');
+    }
+  });
+
+  // Escape key closes any open SRD overlay/popup
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    ['spell-browser-overlay', 'feat-browser-overlay', 'rules-overlay'].forEach(id => {
+      document.getElementById(id)?.classList.add('hidden');
+    });
+    document.getElementById('subclass-popup')?.classList.add('hidden');
+  });
 }
 
 function onAnyInput(e) {
@@ -1528,3 +1554,260 @@ function initConcentration() {
   if (startBtn) startBtn.style.display = isActive ? 'none' : 'block';
 }
 
+/* ============================================================
+   SRD PRESETS — Subclass
+   ============================================================ */
+function openSubclassPresets() {
+  const popup = document.getElementById('subclass-popup');
+  const list  = document.getElementById('subclass-popup-list');
+  const title = document.getElementById('subclass-popup-title');
+  if (!popup || !list) return;
+
+  const cls     = document.getElementById('main-class')?.value || '';
+  const options = SRD_SUBCLASSES[cls];
+
+  title.textContent = cls ? `${cls} Subclasses` : 'Subclasses';
+
+  if (!options || options.length === 0) {
+    list.innerHTML = `<p class="srd-popup-empty">${cls ? 'No SRD subclasses for ' + cls + '.' : 'Select a class first.'}</p>`;
+  } else {
+    list.innerHTML = options.map(sub =>
+      `<button class="srd-popup-item" onclick="applySubclass(${JSON.stringify(sub)})">${sub}</button>`
+    ).join('');
+  }
+
+  // Position below the button
+  const btn  = document.getElementById('btn-subclass-presets');
+  const rect = btn.getBoundingClientRect();
+  popup.style.top  = (rect.bottom + window.scrollY + 4) + 'px';
+  popup.style.left = (rect.left  + window.scrollX)     + 'px';
+
+  popup.classList.remove('hidden');
+}
+
+function closeSubclassPresets() {
+  document.getElementById('subclass-popup')?.classList.add('hidden');
+}
+
+function applySubclass(name) {
+  const el = document.getElementById('subclass');
+  if (el) {
+    el.value = name;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  closeSubclassPresets();
+}
+
+/* ============================================================
+   SRD PRESETS — Spell Browser
+   ============================================================ */
+function openSpellBrowser() {
+  const overlay = document.getElementById('spell-browser-overlay');
+  if (!overlay) return;
+  document.getElementById('spell-search').value = '';
+  document.getElementById('spell-level-filter').value = '';
+  document.getElementById('spell-school-filter').value = '';
+  renderSpellList(SRD_SPELLS);
+  overlay.classList.remove('hidden');
+  overlay.setAttribute('aria-hidden', 'false');
+  document.getElementById('spell-search').focus();
+}
+
+function closeSpellBrowser() {
+  const overlay = document.getElementById('spell-browser-overlay');
+  if (!overlay) return;
+  overlay.classList.add('hidden');
+  overlay.setAttribute('aria-hidden', 'true');
+}
+
+function filterSpells() {
+  const query  = document.getElementById('spell-search').value.trim().toLowerCase();
+  const level  = document.getElementById('spell-level-filter').value;
+  const school = document.getElementById('spell-school-filter').value;
+
+  const filtered = SRD_SPELLS.filter(sp => {
+    if (level  !== '' && String(sp.l) !== level)               return false;
+    if (school !== '' && sp.s !== school)                       return false;
+    if (query  !== '' && !sp.n.toLowerCase().includes(query))  return false;
+    return true;
+  });
+  renderSpellList(filtered);
+}
+
+function renderSpellList(spells) {
+  const list = document.getElementById('spell-browser-list');
+  if (!list) return;
+  if (spells.length === 0) {
+    list.innerHTML = '<p class="srd-empty">No spells match your filters.</p>';
+    return;
+  }
+  const levelLabel = l => l === 0 ? 'C' : String(l);
+  list.innerHTML = spells.map(sp => {
+    const tags = [];
+    if (sp.c)  tags.push('<span class="srd-tag srd-tag--conc">Conc.</span>');
+    if (sp.ri) tags.push('<span class="srd-tag srd-tag--ritual">Ritual</span>');
+    return `<div class="srd-spell-row" onclick="applySpell(${SRD_SPELLS.indexOf(sp)})">
+      <div class="srd-spell-main">
+        <span class="srd-spell-lvl">${levelLabel(sp.l)}</span>
+        <span class="srd-spell-name">${escSrd(sp.n)}</span>
+        <span class="srd-spell-school">${escSrd(sp.s)}</span>
+        ${tags.join('')}
+      </div>
+      <div class="srd-spell-meta">
+        <span>${escSrd(sp.ct)}</span>
+        <span>${escSrd(sp.r)}</span>
+        <span>${escSrd(sp.d)}</span>
+        <span class="srd-spell-comp">${escSrd(sp.co)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function applySpell(spellIdx) {
+  const sp = SRD_SPELLS[spellIdx];
+  if (!sp) return;
+
+  // Find the first row where the spell name is empty
+  let targetRow = -1;
+  for (let i = 0; i < SPELL_ROWS; i++) {
+    const nameEl = document.querySelector(`[data-key="spellName${i}"]`);
+    if (nameEl && nameEl.value.trim() === '') { targetRow = i; break; }
+  }
+  if (targetRow === -1) {
+    alert('All spell rows are filled. Clear a row first.');
+    return;
+  }
+
+  const levelLabel = sp.l === 0 ? 'C' : String(sp.l);
+  const set = (key, val) => {
+    const el = document.querySelector(`[data-key="${key}"]`);
+    if (!el) return;
+    if (el.type === 'checkbox') el.checked = Boolean(val);
+    else el.value = val;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  set(`spellLvl${targetRow}`,      levelLabel);
+  set(`spellName${targetRow}`,     sp.n);
+  set(`spellCastTime${targetRow}`, sp.ct);
+  set(`spellRange${targetRow}`,    sp.r);
+  set(`spellConc${targetRow}`,     sp.c);
+  set(`spellRitual${targetRow}`,   sp.ri);
+  set(`spellMaterial${targetRow}`, sp.co.includes('M'));
+  set(`spellNotes${targetRow}`,    sp.s);
+
+  saveToStorage();
+  closeSpellBrowser();
+
+  // Switch to spellcasting page so the user sees the filled row
+  switchPage('page3');
+}
+
+/* ============================================================
+   SRD PRESETS — Feat Browser
+   ============================================================ */
+function openFeatBrowser() {
+  const overlay = document.getElementById('feat-browser-overlay');
+  if (!overlay) return;
+  document.getElementById('feat-search').value = '';
+  renderFeatList(SRD_FEATS);
+  overlay.classList.remove('hidden');
+  overlay.setAttribute('aria-hidden', 'false');
+  document.getElementById('feat-search').focus();
+}
+
+function closeFeatBrowser() {
+  const overlay = document.getElementById('feat-browser-overlay');
+  if (!overlay) return;
+  overlay.classList.add('hidden');
+  overlay.setAttribute('aria-hidden', 'true');
+}
+
+function filterFeats() {
+  const query = document.getElementById('feat-search').value.trim().toLowerCase();
+  const filtered = query
+    ? SRD_FEATS.filter(f => f.name.toLowerCase().includes(query) || f.desc.toLowerCase().includes(query))
+    : SRD_FEATS;
+  renderFeatList(filtered);
+}
+
+function renderFeatList(feats) {
+  const list = document.getElementById('feat-browser-list');
+  if (!list) return;
+  if (feats.length === 0) {
+    list.innerHTML = '<p class="srd-empty">No feats match your search.</p>';
+    return;
+  }
+  list.innerHTML = feats.map(f =>
+    `<div class="srd-feat-row" onclick="applyFeat(${JSON.stringify(f.name)})">
+      <div class="srd-feat-name">${escSrd(f.name)}</div>
+      <div class="srd-feat-desc">${escSrd(f.desc)}</div>
+    </div>`
+  ).join('');
+}
+
+function applyFeat(name) {
+  const ta = document.getElementById('feats');
+  if (!ta) return;
+  const current = ta.value.trim();
+  ta.value = current ? current + '\n' + name : name;
+  ta.dispatchEvent(new Event('input', { bubbles: true }));
+  saveToStorage();
+  closeFeatBrowser();
+}
+
+/* ============================================================
+   SRD PRESETS — Rules Reference
+   ============================================================ */
+function openRulesRef() {
+  const overlay = document.getElementById('rules-overlay');
+  if (!overlay) return;
+
+  // Render conditions (once)
+  const condList = document.getElementById('rules-conditions-list');
+  if (condList && condList.children.length === 0) {
+    condList.innerHTML = SRD_CONDITIONS.map(c =>
+      `<div class="srd-rule-card">
+        <div class="srd-rule-name">${escSrd(c.name)}</div>
+        <div class="srd-rule-desc">${escSrd(c.desc)}</div>
+      </div>`
+    ).join('');
+  }
+
+  // Render actions (once)
+  const actList = document.getElementById('rules-actions-list');
+  if (actList && actList.children.length === 0) {
+    actList.innerHTML = SRD_ACTIONS.map(a =>
+      `<div class="srd-rule-card">
+        <div class="srd-rule-name">${escSrd(a.name)} <span class="srd-rule-type">${escSrd(a.type)}</span></div>
+        <div class="srd-rule-desc">${escSrd(a.desc)}</div>
+      </div>`
+    ).join('');
+  }
+
+  switchRulesTab('conditions');
+  overlay.classList.remove('hidden');
+  overlay.setAttribute('aria-hidden', 'false');
+}
+
+function closeRulesRef() {
+  const overlay = document.getElementById('rules-overlay');
+  if (!overlay) return;
+  overlay.classList.add('hidden');
+  overlay.setAttribute('aria-hidden', 'true');
+}
+
+function switchRulesTab(tab) {
+  document.querySelectorAll('.srd-rules-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+  document.getElementById('rules-conditions-list').classList.toggle('hidden', tab !== 'conditions');
+  document.getElementById('rules-actions-list').classList.toggle('hidden',    tab !== 'actions');
+}
+
+/* Shared HTML-escape helper for SRD content */
+function escSrd(str) {
+  const d = document.createElement('div');
+  d.textContent = String(str);
+  return d.innerHTML;
+}
