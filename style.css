@@ -33,10 +33,6 @@
   --shadow:        rgba(60, 30, 10, 0.25);
   --shadow-inset:  rgba(60, 30, 10, 0.15);
 
-  --tab-bg:        #5c3010;
-  --tab-active:    #c8971a;
-  --tab-text:      #f5efe0;
-
   --font-heading:  'Cinzel', 'Georgia', serif;
   --font-body:     'IM Fell English', 'Georgia', serif;
 
@@ -67,8 +63,6 @@ body.dark-mode {
   --shadow:        rgba(0, 0, 0, 0.6);
   --shadow-inset:  rgba(0, 0, 0, 0.4);
 
-  --tab-bg:        #0d0804;
-  --tab-active:    #c8971a;
 }
 
 /* ---------- Reset & Base ---------- */
@@ -108,28 +102,6 @@ body {
   white-space: nowrap;
 }
 
-.tab-nav {
-  display: flex;
-  gap: 2px;
-  flex-wrap: wrap;
-}
-
-.tab-btn {
-  font-family: var(--font-heading);
-  font-size: 0.78rem;
-  padding: 0.35rem 0.7rem;
-  background: var(--tab-bg);
-  color: var(--tab-text);
-  border: 1px solid var(--border-dark);
-  border-radius: var(--radius) var(--radius) 0 0;
-  cursor: pointer;
-  transition: background var(--transition), color var(--transition);
-  letter-spacing: 0.03em;
-}
-
-.tab-btn:hover { background: #8b5e2a; }
-.tab-btn.active { background: var(--tab-active); color: #1a0a00; font-weight: 700; }
-
 .toolbar-actions {
   display: flex;
   gap: 4px;
@@ -160,8 +132,7 @@ body {
 }
 
 /* ---------- Pages ---------- */
-.page { display: none; }
-.page.active { display: block; }
+.page { display: block; }
 
 /* ---------- Sections ---------- */
 .section {
@@ -880,8 +851,7 @@ tbody td input[type="number"] {
   .toolbar { display: none !important; }
   body { background: white; }
 
-  .page { display: none !important; }
-  .page.active { display: block !important; }
+  .page { display: block !important; }
 
   .sheet-container { max-width: 100%; padding: 0.5cm; }
 
@@ -902,7 +872,7 @@ tbody td input[type="number"] {
     color: #000;
   }
 
-  .toolbar-actions, .tab-nav { display: none; }
+  .toolbar-actions { display: none; }
   .two-col-section { grid-template-columns: 1fr 1fr; }
 }
 
