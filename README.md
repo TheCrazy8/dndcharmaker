@@ -57,6 +57,7 @@ Abyssal, Artificer, Barbarian, Bard, Blood Hunter, Cleric, Dragon Knight, Druid,
 index.html   — All 4 pages with tab navigation
 style.css    — D&D parchment-themed styling with dark mode & print styles
 script.js    — Auto-calculations, localStorage, import/export logic
+srd-data.js  — SRD 5.1 spells, feats, and subclasses (CC BY 4.0)
 README.md    — This file
 ```
 
@@ -76,20 +77,23 @@ This project is open source. Feel free to fork, customize, and share!
 
 ---
 
-## 📗 Optional PHB Content
+## 📗 Optional Source Content
 
-### Why PHB content is not included
+### Why non-SRD content is not included
 
-The *Player's Handbook* (PHB) is a copyrighted work by Wizards of the Coast and is **not** covered by the [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) licence that governs the SRD 5.1 data bundled in `srd-data.js`. Including PHB spells, feats, or subclasses directly in this repository would violate that copyright.
+The *Player's Handbook* (PHB) and other sourcebooks are copyrighted works by Wizards of the Coast and are **not** covered by the [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) licence that governs the SRD 5.1 data bundled in `srd-data.js`. Including PHB spells, feats, or subclasses directly in this repository would violate that copyright.
 
-### How to load your own PHB data locally
+### How to load your own data locally
 
-The app ships a **"📗 PHB Data"** button in the toolbar. Clicking it lets you load a local `.json` file whose data is injected into the Spell Browser, Feat Browser, and Subclass picker at runtime — **nothing is ever uploaded or stored on a server.**
+The app ships a **"📗 Load Sources"** button in the toolbar. Clicking it opens a file picker that accepts one or more `.json` files. Each file is loaded into memory as a named **source** and injected into the Spell Browser, Feat Browser, and Subclass picker at runtime — **nothing is ever uploaded or stored on a server.**
+
+You can load multiple files at once. Each file becomes its own named source in the source-filter dropdowns. Re-loading a file whose source name matches an already-loaded source replaces the previous data for that source.
 
 #### JSON file format
 
 ```json
 {
+  "source": "My Sourcebook",
   "spells": [
     {
       "n":  "Spell Name",
@@ -118,6 +122,7 @@ The app ships a **"📗 PHB Data"** button in the toolbar. Clicking it lets you 
 
 | Field | Type | Notes |
 |---|---|---|
+| `source` | string | Display name for this source in the filter dropdowns. Defaults to the filename (without extension, uppercased) if omitted. |
 | `spells[*].n` | string | Spell name (**required**) |
 | `spells[*].l` | number | Level 0 = cantrip (**required**) |
 | `spells[*].s` | string | School of magic |
@@ -131,10 +136,10 @@ The app ships a **"📗 PHB Data"** button in the toolbar. Clicking it lets you 
 | `feats[*].desc` | string | Description (**required**) |
 | `subclasses` | object | Maps class name → array of subclass name strings |
 
-All three top-level keys are **optional** — you can provide only the sections you need.
+All top-level keys (`source`, `spells`, `feats`, `subclasses`) are **optional** — you can provide only the sections you need.
 
-### What happens without PHB data
+### What happens without extra source data
 
-The app works exactly as before: only SRD 5.1 content is shown. The "📗 PHB Data" button is always visible but has no effect until you load a file. You can use the **Source** filter dropdown (All Sources / SRD / PHB) in the Spell Browser and Feat Browser to narrow results once PHB data is loaded.
+The app works exactly as before: only SRD 5.1 content is shown. The **"📗 Load Sources"** button is always visible but has no effect until you load a file. Once data is loaded, use the **Source** filter dropdown (All Sources / SRD / *your source name*) in the Spell Browser and Feat Browser to narrow results.
 
 > **Important:** You are responsible for ensuring any data you load locally complies with the applicable licences. This project does not endorse or facilitate copyright infringement.
