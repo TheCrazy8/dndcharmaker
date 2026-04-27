@@ -116,7 +116,20 @@ You can load multiple files at once. Each file becomes its own named source in t
   "subclasses": {
     "Fighter": ["Echo Knight", "Psi Warrior"],
     "Wizard":  ["Bladesinging", "Order of Scribes"]
-  }
+  },
+  "monsters": [
+    {
+      "name":  "Goblin",
+      "cr":    "1/4",
+      "type":  "Humanoid (goblinoid)",
+      "size":  "Small",
+      "ac":    "15 (leather armor, shield)",
+      "hp":    "7 (2d6)",
+      "speed": "30 ft.",
+      "str": 8, "dex": 14, "con": 10, "int": 10, "wis": 8, "cha": 8,
+      "notes": "Nimble Escape. Scimitar +4 to hit, 1d6+2 slashing."
+    }
+  ]
 }
 ```
 
@@ -135,8 +148,17 @@ You can load multiple files at once. Each file becomes its own named source in t
 | `feats[*].name` | string | Feat name (**required**) |
 | `feats[*].desc` | string | Description (**required**) |
 | `subclasses` | object | Maps class name → array of subclass name strings |
+| `monsters[*].name` | string | Monster name (**required**) |
+| `monsters[*].cr` | string | Challenge rating (e.g. `"1/4"`, `"5"`) |
+| `monsters[*].type` | string | Creature type (e.g. `"Humanoid (goblinoid)"`) |
+| `monsters[*].size` | string | Size category (e.g. `"Small"`, `"Large"`) |
+| `monsters[*].ac` | string | Armor class (e.g. `"15 (leather armor)"`) |
+| `monsters[*].hp` | string | Hit points (e.g. `"7 (2d6)"`) |
+| `monsters[*].speed` | string | Speed (e.g. `"30 ft."`) |
+| `monsters[*].str` … `.cha` | number | Ability scores (STR / DEX / CON / INT / WIS / CHA) |
+| `monsters[*].notes` | string | Special traits, attacks, or any additional info |
 
-All top-level keys (`source`, `spells`, `feats`, `subclasses`) are **optional** — you can provide only the sections you need.
+All top-level keys (`source`, `spells`, `feats`, `subclasses`, `monsters`) are **optional** — you can provide only the sections you need.
 
 ### What happens without extra source data
 

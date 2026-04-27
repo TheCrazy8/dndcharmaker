@@ -23,10 +23,14 @@ const LS_KEY        = 'dnd5e_char_sheet';
      "spells":     [ { "n":"…", "l":1, "s":"…", "ct":"…", "r":"…",
                        "d":"…", "c":false, "ri":false, "co":"VS" }, … ],
      "feats":      [ { "name":"…", "desc":"…" }, … ],
-     "subclasses": { "ClassName": ["Subclass A", "Subclass B"], … }
+     "subclasses": { "ClassName": ["Subclass A", "Subclass B"], … },
+     "monsters":   [ { "name":"…", "cr":"…", "type":"…", "size":"…",
+                       "ac":"…", "hp":"…", "speed":"…",
+                       "str":10, "dex":10, "con":10, "int":10, "wis":10, "cha":10,
+                       "notes":"…" }, … ]
    }
    ============================================================ */
-let _extraSources = []; // [{ name, spells, feats, subclasses }, …]
+let _extraSources = []; // [{ name, spells, feats, subclasses, monsters }, …]
 
 /** Returns all spells (SRD + any loaded sources), each tagged with a .src field. */
 function getAllSpells() {
@@ -44,6 +48,13 @@ function getAllFeats() {
     src.feats.map(f => Object.assign({ src: src.name }, f))
   );
   return [...srd, ...extra];
+}
+
+/** Returns all monsters from any loaded sources, each tagged with a .src field. */
+function getAllMonsters() {
+  return _extraSources.flatMap(src =>
+    (src.monsters || []).map(m => Object.assign({ src: src.name }, m))
+  );
 }
 
 /** Returns merged subclass lists (SRD + any loaded sources). */
@@ -90,6 +101,12 @@ function validateSourceData(data) {
       if (!Array.isArray(subs)) throw new Error(`subclasses["${cls}"] must be an array.`);
     });
   }
+  if (data.monsters !== undefined) {
+    if (!Array.isArray(data.monsters)) throw new Error('"monsters" must be an array.');
+    data.monsters.forEach((m, i) => {
+      if (typeof m.name !== 'string') throw new Error(`monsters[${i}].name must be a string.`);
+    });
+  }
 }
 
 /** Derives a source name from a filename (strips extension, uppercases). */
@@ -100,7 +117,7 @@ function sourceNameFromFile(filename) {
 /** Updates the source filter <select> dropdowns to reflect currently loaded sources. */
 function updateSourceFilters() {
   const sourceNames = _extraSources.map(s => s.name);
-  ['spell-source-filter', 'feat-source-filter'].forEach(id => {
+  ['spell-source-filter', 'feat-source-filter', 'monster-source-filter'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
     const current = sel.value;
@@ -146,6 +163,7 @@ function loadSourceFiles(files) {
           spells:     data.spells     || [],
           feats:      data.feats      || [],
           subclasses: data.subclasses || {},
+          monsters:   data.monsters   || [],
         };
         if (existing >= 0) {
           _extraSources[existing] = entry;
@@ -167,7 +185,7 @@ function loadSourceFiles(files) {
     updateSourceFilters();
     const summary = _extraSources.map(s =>
       `  ${s.name}: ${s.spells.length} spells, ${s.feats.length} feats, ` +
-      `${Object.keys(s.subclasses).length} subclass groups`
+      `${Object.keys(s.subclasses).length} subclass groups, ${s.monsters.length} monsters`
     ).join('\n');
     let msg = '';
     if (loaded > 0) {
@@ -185,6 +203,8 @@ function loadSourceFiles(files) {
     if (spellOverlay && !spellOverlay.classList.contains('hidden')) filterSpells();
     const featOverlay = document.getElementById('feat-browser-overlay');
     if (featOverlay && !featOverlay.classList.contains('hidden')) filterFeats();
+    const monsterOverlay = document.getElementById('monster-browser-overlay');
+    if (monsterOverlay && !monsterOverlay.classList.contains('hidden')) filterMonsters();
   }
 
   // Reset so the same file(s) can be re-loaded
@@ -653,10 +673,11 @@ function bindEvents() {
   document.getElementById('btn-characters').addEventListener('click', openCharacterManager);
   document.getElementById('btn-pointbuy').addEventListener('click', openPointBuy);
   document.getElementById('btn-rules').addEventListener('click', openRulesRef);
+  document.getElementById('btn-monsters').addEventListener('click', openMonsterBrowser);
   document.getElementById('source-files')?.addEventListener('change', e => loadSourceFiles(e.target.files));
 
   // Close SRD overlays on backdrop click
-  ['spell-browser-overlay', 'feat-browser-overlay', 'rules-overlay'].forEach(id => {
+  ['spell-browser-overlay', 'feat-browser-overlay', 'rules-overlay', 'monster-browser-overlay'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('click', e => { if (e.target === el) el.classList.add('hidden'); });
   });
@@ -674,7 +695,7 @@ function bindEvents() {
   // Escape key closes any open SRD overlay/popup
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
-    ['spell-browser-overlay', 'feat-browser-overlay', 'rules-overlay'].forEach(id => {
+    ['spell-browser-overlay', 'feat-browser-overlay', 'rules-overlay', 'monster-browser-overlay'].forEach(id => {
       document.getElementById(id)?.classList.add('hidden');
     });
     document.getElementById('subclass-popup')?.classList.add('hidden');
@@ -1979,6 +2000,131 @@ function switchRulesTab(tab) {
   });
   document.getElementById('rules-conditions-list').classList.toggle('hidden', tab !== 'conditions');
   document.getElementById('rules-actions-list').classList.toggle('hidden',    tab !== 'actions');
+}
+
+/* ============================================================
+   MONSTER BROWSER
+   ============================================================ */
+function openMonsterBrowser() {
+  const overlay = document.getElementById('monster-browser-overlay');
+  if (!overlay) return;
+  document.getElementById('monster-search').value = '';
+  document.getElementById('monster-cr-filter').value = '';
+  document.getElementById('monster-type-filter').value = '';
+  document.getElementById('monster-source-filter').value = '';
+  filterMonsters();
+  overlay.classList.remove('hidden');
+  overlay.setAttribute('aria-hidden', 'false');
+  document.getElementById('monster-search').focus();
+}
+
+function closeMonsterBrowser() {
+  const overlay = document.getElementById('monster-browser-overlay');
+  if (!overlay) return;
+  overlay.classList.add('hidden');
+  overlay.setAttribute('aria-hidden', 'true');
+}
+
+function filterMonsters() {
+  const query  = document.getElementById('monster-search').value.trim().toLowerCase();
+  const cr     = document.getElementById('monster-cr-filter').value;
+  const type   = document.getElementById('monster-type-filter').value.trim().toLowerCase();
+  const source = document.getElementById('monster-source-filter').value;
+
+  const filtered = getAllMonsters().filter(m => {
+    if (source !== '' && m.src !== source)                                return false;
+    if (cr     !== '' && String(m.cr ?? '') !== cr)                       return false;
+    if (type   !== '' && !String(m.type ?? '').toLowerCase().includes(type)) return false;
+    if (query  !== '' && !m.name.toLowerCase().includes(query))           return false;
+    return true;
+  });
+  renderMonsterList(filtered);
+}
+
+function renderMonsterList(monsters) {
+  const list = document.getElementById('monster-browser-list');
+  if (!list) return;
+  if (monsters.length === 0) {
+    list.innerHTML = '<p class="srd-empty">No monsters match your filters.</p>';
+    return;
+  }
+  list.innerHTML = monsters.map((m, i) => {
+    const crLabel = m.cr !== undefined ? `CR ${escSrd(String(m.cr))}` : '';
+    const typeLabel = m.type ? escSrd(m.type) : '';
+    const sizeLabel = m.size ? escSrd(m.size) : '';
+    const srcTag = `<span class="srd-tag srd-tag--phb">${escSrd(m.src)}</span>`;
+    return `<div class="monster-row" data-idx="${i}" onclick="toggleMonsterDetail(this)">
+      <div class="monster-row-summary">
+        <span class="monster-name">${escSrd(m.name)}</span>
+        <span class="monster-meta">${[sizeLabel, typeLabel, crLabel].filter(Boolean).join(' · ')}</span>
+        ${srcTag}
+      </div>
+      <div class="monster-detail hidden">
+        ${buildMonsterStatBlock(m)}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleMonsterDetail(row) {
+  const detail = row.querySelector('.monster-detail');
+  if (!detail) return;
+  const isOpen = !detail.classList.contains('hidden');
+  // Collapse all open details first
+  document.querySelectorAll('#monster-browser-list .monster-detail').forEach(d => {
+    d.classList.add('hidden');
+    d.closest('.monster-row')?.classList.remove('monster-row--open');
+  });
+  // Toggle the clicked one
+  if (!isOpen) {
+    detail.classList.remove('hidden');
+    row.classList.add('monster-row--open');
+  }
+}
+
+function buildMonsterStatBlock(m) {
+  const esc = escSrd;
+  const row = (label, val) =>
+    val !== undefined && val !== null && val !== ''
+      ? `<div class="monster-stat-row"><span class="monster-stat-label">${label}</span><span class="monster-stat-val">${esc(String(val))}</span></div>`
+      : '';
+
+  const abilities = ['str','dex','con','int','wis','cha'];
+  const abilityLabels = ['STR','DEX','CON','INT','WIS','CHA'];
+  const hasAbilities = abilities.some(a => m[a] !== undefined);
+
+  let html = '<div class="monster-stat-block">';
+
+  // Header line
+  const parts = [m.size, m.type].filter(Boolean).map(esc).join(' ');
+  if (parts) html += `<div class="monster-sb-type">${parts}</div>`;
+
+  html += '<div class="monster-sb-grid">';
+  html += row('AC',    m.ac);
+  html += row('HP',    m.hp);
+  html += row('Speed', m.speed);
+  if (m.cr !== undefined) html += row('CR', m.cr);
+  html += '</div>';
+
+  if (hasAbilities) {
+    html += '<div class="monster-sb-abilities">';
+    abilities.forEach((a, i) => {
+      if (m[a] !== undefined) {
+        const score = Number(m[a]);
+        const mod   = Math.floor((score - 10) / 2);
+        const modStr = mod >= 0 ? `+${mod}` : String(mod);
+        html += `<div class="monster-sb-ability"><div class="monster-sb-ab-label">${abilityLabels[i]}</div><div class="monster-sb-ab-score">${score}</div><div class="monster-sb-ab-mod">(${modStr})</div></div>`;
+      }
+    });
+    html += '</div>';
+  }
+
+  if (m.notes) {
+    html += `<div class="monster-sb-notes">${esc(m.notes)}</div>`;
+  }
+
+  html += '</div>';
+  return html;
 }
 
 /* Shared HTML-escape helper for SRD content */
