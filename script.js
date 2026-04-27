@@ -230,7 +230,7 @@ function abilityMod(score) {
 }
 
 function profBonus(level) {
-  const l = Math.max(1, Math.min(20, Number(level)));
+  const l = Math.max(1, Number(level));
   return Math.ceil(l / 4) + 1;
 }
 
@@ -391,14 +391,17 @@ const XP_THRESHOLDS = [
 ];
 
 function updateXPBar() {
-  const level = Math.max(1, Math.min(20, Number(document.getElementById('level')?.value) || 1));
+  const level = Math.max(1, Number(document.getElementById('level')?.value) || 1);
   const xp = Number(document.getElementById('xp')?.value) || 0;
 
-  const currentThreshold = XP_THRESHOLDS[level] || 0;
-  const nextThreshold = level >= 20 ? XP_THRESHOLDS[20] : (XP_THRESHOLDS[level + 1] || 0);
+  const currentThreshold = XP_THRESHOLDS[level] ?? XP_THRESHOLDS[XP_THRESHOLDS.length - 1];
+  const nextThreshold = XP_THRESHOLDS[level + 1] ?? null;
   const xpIntoLevel = xp - currentThreshold;
-  const xpNeeded = nextThreshold - currentThreshold;
-  const pct = level >= 20 ? 100 : (xpNeeded > 0 ? Math.min(100, Math.max(0, (xpIntoLevel / xpNeeded) * 100)) : 0);
+  const xpNeeded = nextThreshold !== null ? nextThreshold - currentThreshold : 0;
+  // Uncapped: allow pct > 100 when XP overshoots the next threshold
+  const pct = nextThreshold !== null && xpNeeded > 0
+    ? Math.max(0, (xpIntoLevel / xpNeeded) * 100)
+    : (xp >= currentThreshold ? 100 : 0);
 
   const lvlEl = document.getElementById('xp-current-level');
   const curEl = document.getElementById('xp-current-val');
@@ -410,14 +413,15 @@ function updateXPBar() {
 
   if (lvlEl) lvlEl.textContent = level;
   if (curEl) curEl.textContent = xp.toLocaleString();
-  if (nextEl) nextEl.textContent = level >= 20 ? 'MAX' : nextThreshold.toLocaleString();
+  if (nextEl) nextEl.textContent = nextThreshold !== null ? nextThreshold.toLocaleString() : '—';
   if (fillEl) {
-    fillEl.style.width = pct + '%';
-    fillEl.classList.toggle('maxed', level >= 20);
+    // Visual fill is capped at 100% (bar track clips overflow), but turns gold when maxed
+    fillEl.style.width = Math.min(100, pct) + '%';
+    fillEl.classList.toggle('maxed', nextThreshold === null);
   }
-  if (textEl) textEl.textContent = level >= 20 ? 'MAX LEVEL' : Math.round(pct) + '%';
+  if (textEl) textEl.textContent = nextThreshold !== null ? Math.round(pct) + '%' : 'MAX';
   if (prevLabel) prevLabel.textContent = currentThreshold.toLocaleString() + ' XP';
-  if (nextLabel) nextLabel.textContent = level >= 20 ? 'Max Level!' : 'Next: ' + nextThreshold.toLocaleString() + ' XP';
+  if (nextLabel) nextLabel.textContent = nextThreshold !== null ? 'Next: ' + nextThreshold.toLocaleString() + ' XP' : 'Max Level!';
 }
 
 /* ============================================================
