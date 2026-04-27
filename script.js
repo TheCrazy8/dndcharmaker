@@ -398,10 +398,11 @@ function updateXPBar() {
   const nextThreshold = XP_THRESHOLDS[level + 1] ?? null;
   const xpIntoLevel = xp - currentThreshold;
   const xpNeeded = nextThreshold !== null ? nextThreshold - currentThreshold : 0;
-  // Uncapped: allow pct > 100 when XP overshoots the next threshold
+  // Uncapped: allow pct > 100 when XP overshoots the next threshold.
+  // When there is no next threshold (max level or homebrew beyond array), bar is full.
   const pct = nextThreshold !== null && xpNeeded > 0
     ? Math.max(0, (xpIntoLevel / xpNeeded) * 100)
-    : (xp >= currentThreshold ? 100 : 0);
+    : 100;
 
   const lvlEl = document.getElementById('xp-current-level');
   const curEl = document.getElementById('xp-current-val');
