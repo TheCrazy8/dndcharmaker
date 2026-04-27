@@ -12,56 +12,61 @@ const SPELL_LEVELS  = 9;
 const LS_KEY        = 'dnd5e_char_sheet';
 
 /* ============================================================
-   PHB OPTIONAL DATA
-   PHB content (Player's Handbook) is NOT redistributable under
-   the SRD CC BY 4.0 licence.  Instead, users may supply their
-   own local JSON file whose data is loaded into memory only —
-   it is never committed to this repository.
+   OPTIONAL EXTRA SOURCE DATA
+   Users may supply local JSON files — data is loaded into
+   memory only and never committed to this repository.
+   Multiple files may be loaded at once; each becomes a named
+   source in the spell/feat browsers.
    Expected file format:
    {
+     "source":     "My Source Name",   ← optional; defaults to filename
      "spells":     [ { "n":"…", "l":1, "s":"…", "ct":"…", "r":"…",
                        "d":"…", "c":false, "ri":false, "co":"VS" }, … ],
      "feats":      [ { "name":"…", "desc":"…" }, … ],
      "subclasses": { "ClassName": ["Subclass A", "Subclass B"], … }
    }
    ============================================================ */
-let _phbSpells     = [];
-let _phbFeats      = [];
-let _phbSubclasses = {};
+let _extraSources = []; // [{ name, spells, feats, subclasses }, …]
 
-/** Returns all spells (SRD + any loaded PHB), each tagged with a .src field. */
+/** Returns all spells (SRD + any loaded sources), each tagged with a .src field. */
 function getAllSpells() {
   const srd = SRD_SPELLS.map(sp => Object.assign({ src: 'SRD' }, sp));
-  const phb = _phbSpells.map(sp => Object.assign({ src: 'PHB' }, sp));
-  return [...srd, ...phb];
+  const extra = _extraSources.flatMap(src =>
+    src.spells.map(sp => Object.assign({ src: src.name }, sp))
+  );
+  return [...srd, ...extra];
 }
 
-/** Returns all feats (SRD + any loaded PHB), each tagged with a .src field. */
+/** Returns all feats (SRD + any loaded sources), each tagged with a .src field. */
 function getAllFeats() {
   const srd = SRD_FEATS.map(f => Object.assign({ src: 'SRD' }, f));
-  const phb = _phbFeats.map(f => Object.assign({ src: 'PHB' }, f));
-  return [...srd, ...phb];
+  const extra = _extraSources.flatMap(src =>
+    src.feats.map(f => Object.assign({ src: src.name }, f))
+  );
+  return [...srd, ...extra];
 }
 
-/** Returns merged subclass lists (SRD + any loaded PHB). */
+/** Returns merged subclass lists (SRD + any loaded sources). */
 function getAllSubclasses() {
   const merged = {};
   Object.keys(SRD_SUBCLASSES).forEach(cls => {
     merged[cls] = [...SRD_SUBCLASSES[cls]];
   });
-  Object.entries(_phbSubclasses).forEach(([cls, subs]) => {
-    if (!merged[cls]) merged[cls] = [];
-    subs.forEach(s => { if (!merged[cls].includes(s)) merged[cls].push(s); });
+  _extraSources.forEach(src => {
+    Object.entries(src.subclasses).forEach(([cls, subs]) => {
+      if (!merged[cls]) merged[cls] = [];
+      subs.forEach(s => { if (!merged[cls].includes(s)) merged[cls].push(s); });
+    });
   });
   return merged;
 }
 
 /* ============================================================
-   PHB OPTIONAL DATA LOADER
+   OPTIONAL SOURCE DATA LOADER
    ============================================================ */
-function validatePHBData(data) {
+function validateSourceData(data) {
   if (typeof data !== 'object' || data === null || Array.isArray(data)) {
-    throw new Error('PHB data must be a JSON object.');
+    throw new Error('Source data must be a JSON object.');
   }
   if (data.spells !== undefined) {
     if (!Array.isArray(data.spells)) throw new Error('"spells" must be an array.');
@@ -87,34 +92,103 @@ function validatePHBData(data) {
   }
 }
 
-function loadPHBDataFile(file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = evt => {
-    try {
-      const data = JSON.parse(evt.target.result);
-      validatePHBData(data);
-      _phbSpells     = data.spells     || [];
-      _phbFeats      = data.feats      || [];
-      _phbSubclasses = data.subclasses || {};
-      alert(
-        `PHB data loaded successfully!\n` +
-        `  Spells: ${_phbSpells.length}\n` +
-        `  Feats:  ${_phbFeats.length}\n` +
-        `  Subclass groups: ${Object.keys(_phbSubclasses).length}`
-      );
-      // Refresh any open browser panels
-      const spellOverlay = document.getElementById('spell-browser-overlay');
-      if (spellOverlay && !spellOverlay.classList.contains('hidden')) filterSpells();
-      const featOverlay = document.getElementById('feat-browser-overlay');
-      if (featOverlay && !featOverlay.classList.contains('hidden')) filterFeats();
-    } catch (err) {
-      alert('Failed to load PHB data: ' + err.message);
+/** Derives a source name from a filename (strips extension, uppercases). */
+function sourceNameFromFile(filename) {
+  return filename.replace(/\.[^.]+$/, '').toUpperCase();
+}
+
+/** Updates the source filter <select> dropdowns to reflect currently loaded sources. */
+function updateSourceFilters() {
+  const sourceNames = _extraSources.map(s => s.name);
+  ['spell-source-filter', 'feat-source-filter'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const current = sel.value;
+    // Remove dynamically added options (keep "All Sources" and "SRD")
+    const toRemove = Array.from(sel.options).filter(opt => opt.value !== '' && opt.value !== 'SRD');
+    toRemove.forEach(opt => opt.remove());
+    // Add an option for each loaded source
+    sourceNames.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    });
+    // Restore prior selection if still valid, otherwise reset to "All"
+    if ([...sel.options].some(o => o.value === current)) {
+      sel.value = current;
+    } else {
+      sel.value = '';
     }
-  };
-  reader.readAsText(file);
-  // Reset so the same file can be re-loaded
-  const input = document.getElementById('phb-file');
+  });
+}
+
+function loadSourceFiles(files) {
+  if (!files || files.length === 0) return;
+  let loaded = 0;
+  const errors = [];
+  const replaced = [];
+  const total = files.length;
+
+  Array.from(files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = evt => {
+      try {
+        const data = JSON.parse(evt.target.result);
+        validateSourceData(data);
+        const name = (typeof data.source === 'string' && data.source.trim())
+          ? data.source.trim()
+          : sourceNameFromFile(file.name);
+        // Replace an existing source with the same name, or append a new one
+        const existing = _extraSources.findIndex(s => s.name === name);
+        const entry = {
+          name,
+          spells:     data.spells     || [],
+          feats:      data.feats      || [],
+          subclasses: data.subclasses || {},
+        };
+        if (existing >= 0) {
+          _extraSources[existing] = entry;
+          replaced.push(name);
+        } else {
+          _extraSources.push(entry);
+        }
+        loaded++;
+        if (loaded + errors.length === total) finalize();
+      } catch (err) {
+        errors.push(`${file.name}: ${err.message}`);
+        if (loaded + errors.length === total) finalize();
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  function finalize() {
+    updateSourceFilters();
+    const summary = _extraSources.map(s =>
+      `  ${s.name}: ${s.spells.length} spells, ${s.feats.length} feats, ` +
+      `${Object.keys(s.subclasses).length} subclass groups`
+    ).join('\n');
+    let msg = '';
+    if (loaded > 0) {
+      msg += `${loaded} source file(s) loaded.\nActive sources:\n${summary}`;
+      if (replaced.length > 0) {
+        msg += `\n\nNote: the following sources were replaced with new data: ${replaced.join(', ')}`;
+      }
+    }
+    if (errors.length > 0) {
+      msg += (msg ? '\n\n' : '') + `Errors:\n${errors.map(e => '  ' + e).join('\n')}`;
+    }
+    alert(msg);
+    // Refresh any open browser panels
+    const spellOverlay = document.getElementById('spell-browser-overlay');
+    if (spellOverlay && !spellOverlay.classList.contains('hidden')) filterSpells();
+    const featOverlay = document.getElementById('feat-browser-overlay');
+    if (featOverlay && !featOverlay.classList.contains('hidden')) filterFeats();
+  }
+
+  // Reset so the same file(s) can be re-loaded
+  const input = document.getElementById('source-files');
   if (input) input.value = '';
 }
 
@@ -579,7 +653,7 @@ function bindEvents() {
   document.getElementById('btn-characters').addEventListener('click', openCharacterManager);
   document.getElementById('btn-pointbuy').addEventListener('click', openPointBuy);
   document.getElementById('btn-rules').addEventListener('click', openRulesRef);
-  document.getElementById('phb-file')?.addEventListener('change', e => loadPHBDataFile(e.target.files[0]));
+  document.getElementById('source-files')?.addEventListener('change', e => loadSourceFiles(e.target.files));
 
   // Close SRD overlays on backdrop click
   ['spell-browser-overlay', 'feat-browser-overlay', 'rules-overlay'].forEach(id => {
@@ -1742,7 +1816,7 @@ function renderSpellList(spells) {
   const levelLabel = l => l === 0 ? 'C' : String(l);
   list.innerHTML = spells.map(({ sp, idx }) => {
     const tags = [];
-    if (sp.src === 'PHB') tags.push('<span class="srd-tag srd-tag--phb">PHB</span>');
+    if (sp.src !== 'SRD') tags.push(`<span class="srd-tag srd-tag--phb">${escSrd(sp.src)}</span>`);
     if (sp.c)  tags.push('<span class="srd-tag srd-tag--conc">Conc.</span>');
     if (sp.ri) tags.push('<span class="srd-tag srd-tag--ritual">Ritual</span>');
     return `<div class="srd-spell-row" onclick="applySpell(${idx})">
@@ -1842,7 +1916,7 @@ function renderFeatList(feats) {
   }
   list.innerHTML = feats.map(f =>
     `<div class="srd-feat-row" onclick="applyFeat(${JSON.stringify(f.name)})">
-      <div class="srd-feat-name">${escSrd(f.name)}${f.src === 'PHB' ? ' <span class="srd-tag srd-tag--phb">PHB</span>' : ''}</div>
+      <div class="srd-feat-name">${escSrd(f.name)}${f.src !== 'SRD' ? ` <span class="srd-tag srd-tag--phb">${escSrd(f.src)}</span>` : ''}</div>
       <div class="srd-feat-desc">${escSrd(f.desc)}</div>
     </div>`
   ).join('');
