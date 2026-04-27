@@ -3150,6 +3150,7 @@ body.dark-mode .condition-toggle input:checked + .condition-btn {
 }
 .srd-tag--conc   { background: #1a4a6a22; color: var(--text-mod); border: 1px solid var(--text-mod); }
 .srd-tag--ritual { background: #1a5c1a22; color: var(--accent-green); border: 1px solid var(--accent-green); }
+.srd-tag--phb    { background: #4a1a6a22; color: #8b5cf6; border: 1px solid #8b5cf6; }
 
 /* ============================================================
    SRD PRESETS — Feat rows

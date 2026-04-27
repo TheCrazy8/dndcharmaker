@@ -30,6 +30,10 @@
       <button id="btn-characters" class="action-btn" title="Manage Characters">👤 Characters</button>
       <button id="btn-pointbuy" class="action-btn" title="Point Buy Calculator">🧮 Point Buy</button>
       <button id="btn-rules" class="action-btn" title="SRD Rules Reference">📚 Rules</button>
+      <label class="action-btn" title="Load optional PHB content from a local JSON file (not stored in repo)">
+        📗 PHB Data
+        <input type="file" id="phb-file" accept=".json" style="display:none" />
+      </label>
     </div>
   </header>
 
@@ -1395,9 +1399,9 @@
 
   <!-- Spell Browser Modal -->
   <div id="spell-browser-overlay" class="srd-overlay hidden" aria-hidden="true">
-    <div class="srd-panel" role="dialog" aria-label="SRD Spell Browser">
+    <div class="srd-panel" role="dialog" aria-label="Spell Browser">
       <div class="srd-panel-header">
-        <h2 class="srd-panel-title">📖 SRD Spell Browser</h2>
+        <h2 class="srd-panel-title">📖 Spell Browser</h2>
         <button class="srd-panel-close" onclick="closeSpellBrowser()" title="Close">&times;</button>
       </div>
       <div class="srd-panel-filters">
@@ -1426,6 +1430,11 @@
           <option>Necromancy</option>
           <option>Transmutation</option>
         </select>
+        <select id="spell-source-filter" class="srd-filter-select" onchange="filterSpells()">
+          <option value="">All Sources</option>
+          <option value="SRD">SRD</option>
+          <option value="PHB">PHB</option>
+        </select>
       </div>
       <p class="srd-browser-hint">Click a spell to fill the next empty row in your spell list.</p>
       <div class="srd-list" id="spell-browser-list"></div>
@@ -1434,13 +1443,18 @@
 
   <!-- Feat Browser Modal -->
   <div id="feat-browser-overlay" class="srd-overlay hidden" aria-hidden="true">
-    <div class="srd-panel" role="dialog" aria-label="SRD Feat Browser">
+    <div class="srd-panel" role="dialog" aria-label="Feat Browser">
       <div class="srd-panel-header">
-        <h2 class="srd-panel-title">📜 SRD Feat Browser</h2>
+        <h2 class="srd-panel-title">📜 Feat Browser</h2>
         <button class="srd-panel-close" onclick="closeFeatBrowser()" title="Close">&times;</button>
       </div>
       <div class="srd-panel-filters">
         <input type="text" id="feat-search" class="srd-search" placeholder="Search feats…" oninput="filterFeats()" />
+        <select id="feat-source-filter" class="srd-filter-select" onchange="filterFeats()">
+          <option value="">All Sources</option>
+          <option value="SRD">SRD</option>
+          <option value="PHB">PHB</option>
+        </select>
       </div>
       <p class="srd-browser-hint">Click a feat to append it to your Feats section.</p>
       <div class="srd-list" id="feat-browser-list"></div>

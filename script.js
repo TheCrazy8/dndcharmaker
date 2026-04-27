@@ -11,6 +11,113 @@ const SPELL_ROWS    = 35;
 const SPELL_LEVELS  = 9;
 const LS_KEY        = 'dnd5e_char_sheet';
 
+/* ============================================================
+   PHB OPTIONAL DATA
+   PHB content (Player's Handbook) is NOT redistributable under
+   the SRD CC BY 4.0 licence.  Instead, users may supply their
+   own local JSON file whose data is loaded into memory only —
+   it is never committed to this repository.
+   Expected file format:
+   {
+     "spells":     [ { "n":"…", "l":1, "s":"…", "ct":"…", "r":"…",
+                       "d":"…", "c":false, "ri":false, "co":"VS" }, … ],
+     "feats":      [ { "name":"…", "desc":"…" }, … ],
+     "subclasses": { "ClassName": ["Subclass A", "Subclass B"], … }
+   }
+   ============================================================ */
+let _phbSpells     = [];
+let _phbFeats      = [];
+let _phbSubclasses = {};
+
+/** Returns all spells (SRD + any loaded PHB), each tagged with a .src field. */
+function getAllSpells() {
+  const srd = SRD_SPELLS.map(sp => Object.assign({ src: 'SRD' }, sp));
+  const phb = _phbSpells.map(sp => Object.assign({ src: 'PHB' }, sp));
+  return [...srd, ...phb];
+}
+
+/** Returns all feats (SRD + any loaded PHB), each tagged with a .src field. */
+function getAllFeats() {
+  const srd = SRD_FEATS.map(f => Object.assign({ src: 'SRD' }, f));
+  const phb = _phbFeats.map(f => Object.assign({ src: 'PHB' }, f));
+  return [...srd, ...phb];
+}
+
+/** Returns merged subclass lists (SRD + any loaded PHB). */
+function getAllSubclasses() {
+  const merged = {};
+  Object.keys(SRD_SUBCLASSES).forEach(cls => {
+    merged[cls] = [...SRD_SUBCLASSES[cls]];
+  });
+  Object.entries(_phbSubclasses).forEach(([cls, subs]) => {
+    if (!merged[cls]) merged[cls] = [];
+    subs.forEach(s => { if (!merged[cls].includes(s)) merged[cls].push(s); });
+  });
+  return merged;
+}
+
+/* ============================================================
+   PHB OPTIONAL DATA LOADER
+   ============================================================ */
+function validatePHBData(data) {
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+    throw new Error('PHB data must be a JSON object.');
+  }
+  if (data.spells !== undefined) {
+    if (!Array.isArray(data.spells)) throw new Error('"spells" must be an array.');
+    data.spells.forEach((sp, i) => {
+      if (typeof sp.n !== 'string') throw new Error(`spells[${i}].n must be a string (spell name).`);
+      if (typeof sp.l !== 'number') throw new Error(`spells[${i}].l must be a number (spell level).`);
+    });
+  }
+  if (data.feats !== undefined) {
+    if (!Array.isArray(data.feats)) throw new Error('"feats" must be an array.');
+    data.feats.forEach((f, i) => {
+      if (typeof f.name !== 'string') throw new Error(`feats[${i}].name must be a string.`);
+      if (typeof f.desc !== 'string') throw new Error(`feats[${i}].desc must be a string.`);
+    });
+  }
+  if (data.subclasses !== undefined) {
+    if (typeof data.subclasses !== 'object' || Array.isArray(data.subclasses)) {
+      throw new Error('"subclasses" must be an object mapping class names to arrays.');
+    }
+    Object.entries(data.subclasses).forEach(([cls, subs]) => {
+      if (!Array.isArray(subs)) throw new Error(`subclasses["${cls}"] must be an array.`);
+    });
+  }
+}
+
+function loadPHBDataFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = evt => {
+    try {
+      const data = JSON.parse(evt.target.result);
+      validatePHBData(data);
+      _phbSpells     = data.spells     || [];
+      _phbFeats      = data.feats      || [];
+      _phbSubclasses = data.subclasses || {};
+      alert(
+        `PHB data loaded successfully!\n` +
+        `  Spells: ${_phbSpells.length}\n` +
+        `  Feats:  ${_phbFeats.length}\n` +
+        `  Subclass groups: ${Object.keys(_phbSubclasses).length}`
+      );
+      // Refresh any open browser panels
+      const spellOverlay = document.getElementById('spell-browser-overlay');
+      if (spellOverlay && !spellOverlay.classList.contains('hidden')) filterSpells();
+      const featOverlay = document.getElementById('feat-browser-overlay');
+      if (featOverlay && !featOverlay.classList.contains('hidden')) filterFeats();
+    } catch (err) {
+      alert('Failed to load PHB data: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  // Reset so the same file can be re-loaded
+  const input = document.getElementById('phb-file');
+  if (input) input.value = '';
+}
+
 /* Spell slot totals per level per character level (5e standard).
    Index 0 is an unused placeholder so that array index matches character level (1–20). */
 const SPELL_SLOT_TABLE = [
@@ -471,6 +578,7 @@ function bindEvents() {
   document.getElementById('btn-characters').addEventListener('click', openCharacterManager);
   document.getElementById('btn-pointbuy').addEventListener('click', openPointBuy);
   document.getElementById('btn-rules').addEventListener('click', openRulesRef);
+  document.getElementById('phb-file')?.addEventListener('change', e => loadPHBDataFile(e.target.files[0]));
 
   // Close SRD overlays on backdrop click
   ['spell-browser-overlay', 'feat-browser-overlay', 'rules-overlay'].forEach(id => {
@@ -1565,12 +1673,12 @@ function openSubclassPresets() {
   if (typeof SRD_SUBCLASSES === 'undefined') return;
 
   const cls     = document.getElementById('main-class')?.value || '';
-  const options = SRD_SUBCLASSES[cls];
+  const options = getAllSubclasses()[cls];
 
   title.textContent = cls ? `${cls} Subclasses` : 'Subclasses';
 
   if (!options || options.length === 0) {
-    list.innerHTML = `<p class="srd-popup-empty">${cls ? 'No SRD subclasses for ' + escSrd(cls) + '.' : 'Select a class first.'}</p>`;
+    list.innerHTML = `<p class="srd-popup-empty">${cls ? 'No subclasses for ' + escSrd(cls) + '.' : 'Select a class first.'}</p>`;
   } else {
     list.innerHTML = options.map(sub =>
       `<button class="srd-popup-item" onclick="applySubclass(${JSON.stringify(sub)})">${sub}</button>`
@@ -1608,8 +1716,9 @@ function openSpellBrowser() {
   document.getElementById('spell-search').value = '';
   document.getElementById('spell-level-filter').value = '';
   document.getElementById('spell-school-filter').value = '';
+  document.getElementById('spell-source-filter').value = '';
   // Build full indexed list once
-  renderSpellList(SRD_SPELLS.map((sp, idx) => ({ sp, idx })));
+  renderSpellList(getAllSpells().map((sp, idx) => ({ sp, idx })));
   overlay.classList.remove('hidden');
   overlay.setAttribute('aria-hidden', 'false');
   document.getElementById('spell-search').focus();
@@ -1626,13 +1735,15 @@ function filterSpells() {
   const query  = document.getElementById('spell-search').value.trim().toLowerCase();
   const level  = document.getElementById('spell-level-filter').value;
   const school = document.getElementById('spell-school-filter').value;
+  const source = document.getElementById('spell-source-filter').value;
 
   // Keep track of original index alongside each spell to avoid indexOf() in render
-  const filtered = SRD_SPELLS
+  const filtered = getAllSpells()
     .map((sp, idx) => ({ sp, idx }))
     .filter(({ sp }) => {
       if (level  !== '' && String(sp.l) !== level)               return false;
       if (school !== '' && sp.s !== school)                       return false;
+      if (source !== '' && sp.src !== source)                     return false;
       if (query  !== '' && !sp.n.toLowerCase().includes(query))  return false;
       return true;
     });
@@ -1649,6 +1760,7 @@ function renderSpellList(spells) {
   const levelLabel = l => l === 0 ? 'C' : String(l);
   list.innerHTML = spells.map(({ sp, idx }) => {
     const tags = [];
+    if (sp.src === 'PHB') tags.push('<span class="srd-tag srd-tag--phb">PHB</span>');
     if (sp.c)  tags.push('<span class="srd-tag srd-tag--conc">Conc.</span>');
     if (sp.ri) tags.push('<span class="srd-tag srd-tag--ritual">Ritual</span>');
     return `<div class="srd-spell-row" onclick="applySpell(${idx})">
@@ -1669,7 +1781,7 @@ function renderSpellList(spells) {
 }
 
 function applySpell(spellIdx) {
-  const sp = SRD_SPELLS[spellIdx];
+  const sp = getAllSpells()[spellIdx];
   if (!sp) return;
 
   // Build a key→element map from all data-key inputs once
@@ -1719,7 +1831,8 @@ function openFeatBrowser() {
   const overlay = document.getElementById('feat-browser-overlay');
   if (!overlay) return;
   document.getElementById('feat-search').value = '';
-  renderFeatList(SRD_FEATS);
+  document.getElementById('feat-source-filter').value = '';
+  renderFeatList(getAllFeats());
   overlay.classList.remove('hidden');
   overlay.setAttribute('aria-hidden', 'false');
   document.getElementById('feat-search').focus();
@@ -1733,10 +1846,11 @@ function closeFeatBrowser() {
 }
 
 function filterFeats() {
-  const query = document.getElementById('feat-search').value.trim().toLowerCase();
-  const filtered = query
-    ? SRD_FEATS.filter(f => f.name.toLowerCase().includes(query) || f.desc.toLowerCase().includes(query))
-    : SRD_FEATS;
+  const query  = document.getElementById('feat-search').value.trim().toLowerCase();
+  const source = document.getElementById('feat-source-filter').value;
+  let filtered = getAllFeats();
+  if (source !== '') filtered = filtered.filter(f => f.src === source);
+  if (query  !== '') filtered = filtered.filter(f => f.name.toLowerCase().includes(query) || f.desc.toLowerCase().includes(query));
   renderFeatList(filtered);
 }
 
@@ -1749,7 +1863,7 @@ function renderFeatList(feats) {
   }
   list.innerHTML = feats.map(f =>
     `<div class="srd-feat-row" onclick="applyFeat(${JSON.stringify(f.name)})">
-      <div class="srd-feat-name">${escSrd(f.name)}</div>
+      <div class="srd-feat-name">${escSrd(f.name)}${f.src === 'PHB' ? ' <span class="srd-tag srd-tag--phb">PHB</span>' : ''}</div>
       <div class="srd-feat-desc">${escSrd(f.desc)}</div>
     </div>`
   ).join('');
