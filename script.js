@@ -53,7 +53,7 @@ function getAllFeats() {
 /** Returns all monsters from any loaded sources, each tagged with a .src field. */
 function getAllMonsters() {
   return _extraSources.flatMap(src =>
-    src.monsters.map(m => Object.assign({ src: src.name }, m))
+    (src.monsters || []).map(m => Object.assign({ src: src.name }, m))
   );
 }
 
