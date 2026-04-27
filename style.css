@@ -2920,6 +2920,7 @@ body.dark-mode .condition-toggle input:checked + .condition-btn {
   max-width: 280px;
   overflow: hidden;
 }
+.srd-popup.hidden { display: none; }
 .srd-popup-header {
   display: flex;
   align-items: center;
@@ -2988,6 +2989,7 @@ body.dark-mode .condition-toggle input:checked + .condition-btn {
   padding: 2.5rem 1rem 1rem;
   overflow-y: auto;
 }
+.srd-overlay.hidden { display: none; }
 .srd-panel {
   background: var(--bg-section);
   border: 2px solid var(--border-dark);
@@ -3077,6 +3079,7 @@ body.dark-mode .condition-toggle input:checked + .condition-btn {
   flex: 1;
   padding: 0.4rem 0;
 }
+.srd-list.hidden { display: none; }
 .srd-empty {
   font-size: 0.82rem;
   color: var(--text-muted);
