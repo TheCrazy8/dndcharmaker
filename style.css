@@ -3315,3 +3315,29 @@ body.dark-mode .condition-toggle input:checked + .condition-btn {
   .preset-inline-btn,
   .preset-section-btn { display: none !important; }
 }
+
+/* ---------- Drive Sync + Source Manager ---------- */
+.drive-panel { max-width: 720px; }
+.drive-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.source-manager-heading {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  color: var(--text-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0.8rem 0 0.4rem;
+  border-bottom: 1px solid var(--border-medium);
+  padding-bottom: 0.2rem;
+}
+.drive-note {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  margin-top: 0.7rem;
+  text-align: center;
+}

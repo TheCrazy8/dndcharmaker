@@ -11,7 +11,11 @@ const SPELL_ROWS    = 35;
 const SPELL_LEVELS  = 9;
 const LS_KEY        = 'dnd5e_char_sheet';
 const GDRIVE_CLIENT_ID = '829625454416-p55tk57ep55r6ak989h32c0sbjhujs16.apps.googleusercontent.com';
-/* Gdrive client id is not secret, this is intentional as it is only usable on my site
+// Google Drive client id is not secret; it is only usable with allowed OAuth origins.
+const GDRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file';
+const GDRIVE_CHAR_PREFIX = 'dnd-character-';
+const GDRIVE_SOURCE_PREFIX = 'dnd-source-';
+const SOURCE_LIBRARY_KEY = 'dnd5e_source_library';
 
 /* ============================================================
    OPTIONAL EXTRA SOURCE DATA
@@ -33,6 +37,32 @@ const GDRIVE_CLIENT_ID = '829625454416-p55tk57ep55r6ak989h32c0sbjhujs16.apps.goo
    }
    ============================================================ */
 let _extraSources = []; // [{ name, spells, feats, subclasses, monsters }, …]
+
+function getSourceLibrary() {
+  try { return JSON.parse(localStorage.getItem(SOURCE_LIBRARY_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveSourceLibrary(library) {
+  localStorage.setItem(SOURCE_LIBRARY_KEY, JSON.stringify(library));
+}
+
+function persistLoadedSources() {
+  saveSourceLibrary(_extraSources);
+}
+
+function restoreLoadedSources() {
+  _extraSources = getSourceLibrary().map(src => ({
+    name: src.name,
+    spells: src.spells || [],
+    feats: src.feats || [],
+    subclasses: src.subclasses || {},
+    monsters: src.monsters || [],
+    driveFileId: src.driveFileId || null,
+    syncedAt: src.syncedAt || null,
+  }));
+  updateSourceFilters();
+}
 
 /** Returns all spells (SRD + any loaded sources), each tagged with a .src field. */
 function getAllSpells() {
@@ -184,7 +214,9 @@ function loadSourceFiles(files) {
   });
 
   function finalize() {
+    persistLoadedSources();
     updateSourceFilters();
+    renderSourceManagerList();
     const summary = _extraSources.map(s =>
       `  ${s.name}: ${s.spells.length} spells, ${s.feats.length} feats, ` +
       `${Object.keys(s.subclasses).length} subclass groups, ${s.monsters.length} monsters`
@@ -246,6 +278,7 @@ const SPELL_SLOT_TABLE = [
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
   buildDynamicTables();
+  restoreLoadedSources();
   loadFromStorage();
   recalcAll();
   bindEvents();
@@ -677,9 +710,11 @@ function bindEvents() {
   document.getElementById('btn-rules').addEventListener('click', openRulesRef);
   document.getElementById('btn-monsters').addEventListener('click', openMonsterBrowser);
   document.getElementById('source-files')?.addEventListener('change', e => loadSourceFiles(e.target.files));
+  document.getElementById('btn-drive')?.addEventListener('click', openDrivePanel);
+  document.getElementById('btn-source-manager')?.addEventListener('click', openSourceManager);
 
   // Close SRD overlays on backdrop click
-  ['spell-browser-overlay', 'feat-browser-overlay', 'rules-overlay', 'monster-browser-overlay'].forEach(id => {
+  ['spell-browser-overlay', 'feat-browser-overlay', 'rules-overlay', 'monster-browser-overlay', 'drive-overlay', 'source-manager-overlay'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('click', e => { if (e.target === el) el.classList.add('hidden'); });
   });
@@ -697,10 +732,12 @@ function bindEvents() {
   // Escape key closes any open SRD overlay/popup
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
-    ['spell-browser-overlay', 'feat-browser-overlay', 'rules-overlay', 'monster-browser-overlay'].forEach(id => {
+    ['spell-browser-overlay', 'feat-browser-overlay', 'rules-overlay', 'monster-browser-overlay', 'drive-overlay', 'source-manager-overlay'].forEach(id => {
       document.getElementById(id)?.classList.add('hidden');
     });
     document.getElementById('subclass-popup')?.classList.add('hidden');
+    closeDrivePanel();
+    closeSourceManager();
   });
 }
 
@@ -1326,6 +1363,216 @@ function longRest() {
   saveToStorage();
 }
 
+
+/* ============================================================
+/* ============================================================
+   GOOGLE DRIVE SYNC + SOURCE MANAGER
+   ============================================================ */
+let _driveTokenClient = null;
+let _driveAccessToken = null;
+
+function safeFilePart(name) {
+  return String(name || 'unnamed').replace(/[^a-z0-9_-]+/gi, '_').slice(0, 80) || 'unnamed';
+}
+function nowStamp() { return new Date().toISOString(); }
+function friendlyDate(value) {
+  if (!value) return '—';
+  try { return new Date(value).toLocaleString(); } catch { return value; }
+}
+function ensureDriveToken() {
+  return new Promise((resolve, reject) => {
+    if (_driveAccessToken) return resolve(_driveAccessToken);
+    if (!window.google?.accounts?.oauth2) return reject(new Error('Google Identity Services did not load.'));
+    if (!_driveTokenClient) {
+      _driveTokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GDRIVE_CLIENT_ID,
+        scope: GDRIVE_SCOPES,
+        callback: response => {
+          if (response.error) reject(new Error(response.error));
+          else { _driveAccessToken = response.access_token; resolve(_driveAccessToken); }
+        },
+      });
+    }
+    _driveTokenClient.requestAccessToken({ prompt: _driveAccessToken ? '' : 'consent' });
+  });
+}
+async function driveFetch(url, options = {}) {
+  const token = await ensureDriveToken();
+  const res = await fetch(url, { ...options, headers: { Authorization: `Bearer ${token}`, ...(options.headers || {}) } });
+  if (!res.ok) throw new Error(`Drive request failed (${res.status}): ${await res.text().catch(() => res.statusText)}`);
+  return res;
+}
+async function listDriveAppDataFiles(prefix) {
+  const q = encodeURIComponent(`name contains '${prefix}' and trashed = false`);
+  const res = await driveFetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${q}&fields=files(id,name,modifiedTime,size)`);
+  return (await res.json()).files || [];
+}
+async function readDriveJson(fileId) {
+  const res = await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
+  return res.json();
+}
+async function createDriveJsonFile(name, payload) {
+  const metadata = { name, parents: ['appDataFolder'], mimeType: 'application/json' };
+  const boundary = 'dnd_sheet_boundary_' + Date.now();
+  const body = [`--${boundary}`, 'Content-Type: application/json; charset=UTF-8', '', JSON.stringify(metadata), `--${boundary}`, 'Content-Type: application/json; charset=UTF-8', '', JSON.stringify(payload, null, 2), `--${boundary}--`].join('\r\n');
+  const res = await driveFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,modifiedTime', { method: 'POST', headers: { 'Content-Type': `multipart/related; boundary=${boundary}` }, body });
+  return res.json();
+}
+async function updateDriveJsonFile(fileId, payload) {
+  const res = await driveFetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media&fields=id,name,modifiedTime`, { method: 'PATCH', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: JSON.stringify(payload, null, 2) });
+  return res.json();
+}
+async function deleteDriveFile(fileId) {
+  await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, { method: 'DELETE' });
+}
+function openDrivePanel() {
+  const overlay = document.getElementById('drive-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('hidden');
+  overlay.setAttribute('aria-hidden', 'false');
+  refreshDrivePanel();
+}
+function closeDrivePanel() {
+  const overlay = document.getElementById('drive-overlay');
+  if (!overlay) return;
+  overlay.classList.add('hidden');
+  overlay.setAttribute('aria-hidden', 'true');
+}
+async function refreshDrivePanel() {
+  const charList = document.getElementById('drive-character-list');
+  const sourceList = document.getElementById('drive-source-list');
+  if (charList) charList.innerHTML = '<p class="char-mgr-empty">Loading Drive characters…</p>';
+  if (sourceList) sourceList.innerHTML = '<p class="char-mgr-empty">Loading Drive sources…</p>';
+  try {
+    const [chars, sources] = await Promise.all([listDriveAppDataFiles(GDRIVE_CHAR_PREFIX), listDriveAppDataFiles(GDRIVE_SOURCE_PREFIX)]);
+    renderDriveFiles(chars, 'character');
+    renderDriveFiles(sources, 'source');
+  } catch (err) {
+    const msg = escapeHtml(err.message || String(err));
+    if (charList) charList.innerHTML = `<p class="char-mgr-empty">${msg}</p>`;
+    if (sourceList) sourceList.innerHTML = '';
+  }
+}
+function renderDriveFiles(files, type) {
+  const list = document.getElementById(type === 'character' ? 'drive-character-list' : 'drive-source-list');
+  if (!list) return;
+  if (!files.length) { list.innerHTML = `<p class="char-mgr-empty">No Drive ${type}s saved yet.</p>`; return; }
+  list.innerHTML = '';
+  files.sort((a, b) => String(b.modifiedTime).localeCompare(String(a.modifiedTime))).forEach(file => {
+    const div = document.createElement('div');
+    div.className = 'char-mgr-entry';
+    div.innerHTML = `
+      <div class="char-mgr-info">
+        <span class="char-mgr-name">${escapeHtml(file.name.replace(GDRIVE_CHAR_PREFIX, '').replace(GDRIVE_SOURCE_PREFIX, '').replace(/\.json$/i, ''))}</span>
+        <span class="char-mgr-meta">Google Drive app data</span>
+        <span class="char-mgr-date">Modified: ${friendlyDate(file.modifiedTime)}</span>
+      </div>
+      <div class="char-mgr-entry-actions">
+        <button class="char-mgr-btn load" onclick="${type === 'character' ? 'loadDriveCharacter' : 'loadDriveSource'}('${file.id}')">📂 Load</button>
+        <button class="char-mgr-btn delete" onclick="deleteDrive${type === 'character' ? 'Character' : 'Source'}('${file.id}')">🗑️</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+async function saveCurrentCharacterToDrive() {
+  const data = collectAllData();
+  const name = data.charName || 'Unnamed Character';
+  try {
+    await createDriveJsonFile(`${GDRIVE_CHAR_PREFIX}${safeFilePart(name)}-${Date.now()}.json`, { kind: 'dnd5e-character', savedAt: nowStamp(), data });
+    alert(`Saved "${name}" to Google Drive.`);
+    refreshDrivePanel();
+  } catch (err) { alert(err.message || String(err)); }
+}
+async function loadDriveCharacter(fileId) {
+  if (!confirm('Load this Drive character? This will replace your current sheet.')) return;
+  try {
+    const payload = await readDriveJson(fileId);
+    applyData(payload.data || payload);
+    recalcAll();
+    saveToStorage();
+    closeDrivePanel();
+  } catch (err) { alert(err.message || String(err)); }
+}
+async function deleteDriveCharacter(fileId) {
+  if (!confirm('Delete this character from Google Drive app data?')) return;
+  try { await deleteDriveFile(fileId); refreshDrivePanel(); } catch (err) { alert(err.message || String(err)); }
+}
+async function syncLoadedSourcesToDrive() {
+  if (_extraSources.length === 0) { alert('No loaded sources to sync. Load a source JSON first.'); return; }
+  try {
+    for (const src of _extraSources) {
+      const payload = { kind: 'dnd5e-source', source: src.name, syncedAt: nowStamp(), spells: src.spells || [], feats: src.feats || [], subclasses: src.subclasses || {}, monsters: src.monsters || [] };
+      const saved = src.driveFileId ? await updateDriveJsonFile(src.driveFileId, payload) : await createDriveJsonFile(`${GDRIVE_SOURCE_PREFIX}${safeFilePart(src.name)}.json`, payload);
+      src.driveFileId = saved.id || src.driveFileId;
+      src.syncedAt = saved.modifiedTime || nowStamp();
+    }
+    persistLoadedSources();
+    renderSourceManagerList();
+    alert('Loaded sources synced to Google Drive.');
+    refreshDrivePanel();
+  } catch (err) { alert(err.message || String(err)); }
+}
+async function loadDriveSource(fileId) {
+  try {
+    const payload = await readDriveJson(fileId);
+    validateSourceData(payload);
+    const name = (payload.source || payload.name || 'Drive Source').trim();
+    const entry = { name, spells: payload.spells || [], feats: payload.feats || [], subclasses: payload.subclasses || {}, monsters: payload.monsters || [], driveFileId: fileId, syncedAt: payload.syncedAt || nowStamp() };
+    const existing = _extraSources.findIndex(s => s.name === name);
+    if (existing >= 0) _extraSources[existing] = entry; else _extraSources.push(entry);
+    persistLoadedSources();
+    updateSourceFilters();
+    renderSourceManagerList();
+    alert(`Loaded source "${name}" from Google Drive.`);
+  } catch (err) { alert(err.message || String(err)); }
+}
+async function deleteDriveSource(fileId) {
+  if (!confirm('Delete this source from Google Drive app data?')) return;
+  try { await deleteDriveFile(fileId); refreshDrivePanel(); } catch (err) { alert(err.message || String(err)); }
+}
+function openSourceManager() {
+  const overlay = document.getElementById('source-manager-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('hidden');
+  overlay.setAttribute('aria-hidden', 'false');
+  renderSourceManagerList();
+}
+function closeSourceManager() {
+  const overlay = document.getElementById('source-manager-overlay');
+  if (!overlay) return;
+  overlay.classList.add('hidden');
+  overlay.setAttribute('aria-hidden', 'true');
+}
+function renderSourceManagerList() {
+  const list = document.getElementById('source-manager-list');
+  if (!list) return;
+  if (!_extraSources.length) { list.innerHTML = '<p class="char-mgr-empty">No extra sources loaded.</p>'; return; }
+  list.innerHTML = '';
+  _extraSources.forEach((src, index) => {
+    const div = document.createElement('div');
+    div.className = 'char-mgr-entry';
+    div.innerHTML = `
+      <div class="char-mgr-info">
+        <span class="char-mgr-name">${escapeHtml(src.name)}</span>
+        <span class="char-mgr-meta">${src.spells.length} spells · ${src.feats.length} feats · ${Object.keys(src.subclasses || {}).length} subclass groups · ${(src.monsters || []).length} monsters</span>
+        <span class="char-mgr-date">${src.driveFileId ? 'Drive synced' : 'Local only'}${src.syncedAt ? ' · ' + friendlyDate(src.syncedAt) : ''}</span>
+      </div>
+      <div class="char-mgr-entry-actions"><button class="char-mgr-btn delete" onclick="removeSource(${index})">🗑️ Remove</button></div>`;
+    list.appendChild(div);
+  });
+}
+function removeSource(index) {
+  if (index < 0 || index >= _extraSources.length) return;
+  const src = _extraSources[index];
+  if (!confirm(`Remove source "${src.name}" from this browser? Drive copies are not deleted.`)) return;
+  _extraSources.splice(index, 1);
+  persistLoadedSources();
+  updateSourceFilters();
+  renderSourceManagerList();
+  if (document.getElementById('spell-browser-overlay') && !document.getElementById('spell-browser-overlay').classList.contains('hidden')) filterSpells();
+  if (document.getElementById('feat-browser-overlay') && !document.getElementById('feat-browser-overlay').classList.contains('hidden')) filterFeats();
+  if (document.getElementById('monster-browser-overlay') && !document.getElementById('monster-browser-overlay').classList.contains('hidden')) filterMonsters();
+}
 
 /* ============================================================
    CHARACTERS FEATURE

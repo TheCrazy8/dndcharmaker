@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>D&amp;D 5e Character Sheet</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English&display=swap" rel="stylesheet" />
 </head>
@@ -23,6 +24,7 @@
       <button id="btn-print" class="action-btn" title="Print">🖨️ Print</button>
       <button id="btn-theme" class="action-btn" title="Toggle Dark/Light Mode">🌙 Dark</button>
       <button id="btn-characters" class="action-btn" title="Manage Characters">👤 Characters</button>
+      <button id="btn-drive" class="action-btn" title="Google Drive Sync">☁️ Drive</button>
       <button id="btn-pointbuy" class="action-btn" title="Point Buy Calculator">🧮 Point Buy</button>
       <button id="btn-rules" class="action-btn" title="SRD Rules Reference">📚 Rules</button>
       <button id="btn-monsters" class="action-btn" title="Monster Browser">🐉 Monsters</button>
@@ -30,6 +32,7 @@
         📗 Load Sources
         <input type="file" id="source-files" accept=".json" multiple style="display:none" />
       </label>
+      <button id="btn-source-manager" class="action-btn" title="Manage Loaded Sources">🧾 Sources</button>
     </div>
   </header>
 
@@ -1229,6 +1232,50 @@
 <!-- <button class="action-btn" onclick="openCharacterManager()" title="Character Manager">📋 Characters</button> -->
 
 
+
+<!-- Google Drive Sync Modal -->
+<div id="drive-overlay" class="char-mgr-overlay hidden" aria-hidden="true">
+  <div class="char-mgr-panel drive-panel" role="dialog" aria-label="Google Drive Sync">
+    <div class="char-mgr-header">
+      <h2 class="char-mgr-title">☁️ Google Drive Sync</h2>
+      <button class="char-mgr-close" onclick="closeDrivePanel()" title="Close">&times;</button>
+    </div>
+    <div class="char-mgr-body">
+      <div class="char-mgr-actions-top drive-actions">
+        <button class="action-btn" onclick="saveCurrentCharacterToDrive()">💾 Save Current Character to Drive</button>
+        <button class="action-btn" onclick="syncLoadedSourcesToDrive()">📗 Sync Loaded Sources to Drive</button>
+        <button class="action-btn" onclick="refreshDrivePanel()">🔄 Refresh</button>
+      </div>
+      <h3 class="source-manager-heading">Characters in Drive</h3>
+      <div class="char-mgr-list" id="drive-character-list">
+        <p class="char-mgr-empty">Open Drive sync to load saved characters.</p>
+      </div>
+      <h3 class="source-manager-heading">Sources in Drive</h3>
+      <div class="char-mgr-list" id="drive-source-list">
+        <p class="char-mgr-empty">Open Drive sync to load saved sources.</p>
+      </div>
+      <p class="drive-note">Drive files are stored in this app's hidden app-data folder, so they sync between browsers without cluttering your Drive.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Source Manager Modal -->
+<div id="source-manager-overlay" class="char-mgr-overlay hidden" aria-hidden="true">
+  <div class="char-mgr-panel" role="dialog" aria-label="Source Manager">
+    <div class="char-mgr-header">
+      <h2 class="char-mgr-title">🧾 Source Manager</h2>
+      <button class="char-mgr-close" onclick="closeSourceManager()" title="Close">&times;</button>
+    </div>
+    <div class="char-mgr-body">
+      <div class="char-mgr-actions-top">
+        <button class="action-btn" onclick="syncLoadedSourcesToDrive()">☁️ Sync Sources to Drive</button>
+      </div>
+      <div class="char-mgr-list" id="source-manager-list">
+        <p class="char-mgr-empty">No extra sources loaded.</p>
+      </div>
+    </div>
+  </div>
+</div>
   <!-- Point Buy Modal -->
 <!-- Point Buy / Standard Array Modal -->
 <div id="pointbuy-overlay" class="pointbuy-overlay hidden" aria-hidden="true">
