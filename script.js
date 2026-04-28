@@ -35,27 +35,45 @@ const SOURCE_LIBRARY_KEY = 'dnd5e_source_library';
                        "notes":"…" }, … ]
    }
    ============================================================ */
+let gDriveTokenClient = null;
+let gDriveAccessToken = null;
+
 const GDRIVE_SCOPES = [
   'https://www.googleapis.com/auth/drive.file',
   'https://www.googleapis.com/auth/drive.appdata'
 ].join(' ');
 
-let gDriveTokenClient = null;
-let gDriveAccessToken = null;
+function waitForGoogleIdentityServices() {
+  return new Promise((resolve, reject) => {
+    let tries = 0;
 
-function initGoogleDriveOAuth() {
-  if (!window.google?.accounts?.oauth2) {
-    console.error('Google Identity Services not loaded yet.');
-    return false;
-  }
+    const timer = setInterval(() => {
+      tries++;
+
+      if (window.google?.accounts?.oauth2) {
+        clearInterval(timer);
+        resolve();
+      }
+
+      if (tries > 100) {
+        clearInterval(timer);
+        reject(new Error('Google Identity Services failed to load.'));
+      }
+    }, 100);
+  });
+}
+
+async function initGoogleDriveOAuth() {
+  await waitForGoogleIdentityServices();
+
+  if (gDriveTokenClient) return;
 
   gDriveTokenClient = google.accounts.oauth2.initTokenClient({
     client_id: GDRIVE_CLIENT_ID,
     scope: GDRIVE_SCOPES,
-    prompt: '',
     callback: tokenResponse => {
       if (tokenResponse.error) {
-        console.error('Google OAuth error:', tokenResponse);
+        console.error(tokenResponse);
         alert('Google Drive sign-in failed.');
         return;
       }
@@ -65,16 +83,19 @@ function initGoogleDriveOAuth() {
       alert('Google Drive connected!');
     }
   });
-
-  return true;
 }
 
-function connectGoogleDrive() {
-  if (!gDriveTokenClient && !initGoogleDriveOAuth()) return;
+async function connectGoogleDrive() {
+  try {
+    await initGoogleDriveOAuth();
 
-  gDriveTokenClient.requestAccessToken({
-    prompt: gDriveAccessToken ? '' : 'consent'
-  });
+    gDriveTokenClient.requestAccessToken({
+      prompt: gDriveAccessToken ? '' : 'consent'
+    });
+  } catch (err) {
+    console.error(err);
+    alert('Google Identity Services did not load. Check your script tag or ad/script blockers.');
+  }
 }
 
 function getDriveToken() {
