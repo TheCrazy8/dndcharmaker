@@ -12,7 +12,6 @@ const SPELL_LEVELS  = 9;
 const LS_KEY        = 'dnd5e_char_sheet';
 const GDRIVE_CLIENT_ID = '829625454416-p55tk57ep55r6ak989h32c0sbjhujs16.apps.googleusercontent.com';
 // Google Drive client id is not secret; it is only usable with allowed OAuth origins.
-const GDRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file';
 const GDRIVE_CHAR_PREFIX = 'dnd-character-';
 const GDRIVE_SOURCE_PREFIX = 'dnd-source-';
 const SOURCE_LIBRARY_KEY = 'dnd5e_source_library';
@@ -36,6 +35,51 @@ const SOURCE_LIBRARY_KEY = 'dnd5e_source_library';
                        "notes":"…" }, … ]
    }
    ============================================================ */
+const GDRIVE_SCOPES = [
+  'https://www.googleapis.com/auth/drive.file',
+  'https://www.googleapis.com/auth/drive.appdata'
+].join(' ');
+
+let gDriveTokenClient = null;
+let gDriveAccessToken = null;
+
+function initGoogleDriveOAuth() {
+  if (!window.google?.accounts?.oauth2) {
+    console.error('Google Identity Services not loaded yet.');
+    return false;
+  }
+
+  gDriveTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GDRIVE_CLIENT_ID,
+    scope: GDRIVE_SCOPES,
+    prompt: '',
+    callback: tokenResponse => {
+      if (tokenResponse.error) {
+        console.error('Google OAuth error:', tokenResponse);
+        alert('Google Drive sign-in failed.');
+        return;
+      }
+
+      gDriveAccessToken = tokenResponse.access_token;
+      localStorage.setItem('gdrive_connected', 'true');
+      alert('Google Drive connected!');
+    }
+  });
+
+  return true;
+}
+
+function connectGoogleDrive() {
+  if (!gDriveTokenClient && !initGoogleDriveOAuth()) return;
+
+  gDriveTokenClient.requestAccessToken({
+    prompt: gDriveAccessToken ? '' : 'consent'
+  });
+}
+
+function getDriveToken() {
+  return gDriveAccessToken;
+}
 let _extraSources = []; // [{ name, spells, feats, subclasses, monsters }, …]
 
 function getSourceLibrary() {
