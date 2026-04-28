@@ -755,6 +755,7 @@ function bindEvents() {
   document.getElementById('btn-monsters').addEventListener('click', openMonsterBrowser);
   document.getElementById('source-files')?.addEventListener('change', e => loadSourceFiles(e.target.files));
   document.getElementById('btn-drive')?.addEventListener('click', openDrivePanel);
+  document.getElementById('btn-drive-connect')?.addEventListener('click', connectGoogleDrive);
   document.getElementById('btn-source-manager')?.addEventListener('click', openSourceManager);
 
   // Close SRD overlays on backdrop click
