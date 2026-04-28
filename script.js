@@ -10,7 +10,8 @@ const WEAPON_ROWS   = 8;
 const SPELL_ROWS    = 35;
 const SPELL_LEVELS  = 9;
 const LS_KEY        = 'dnd5e_char_sheet';
-const GDRIVE_CLIENT_ID = 'placeholder';
+const GDRIVE_CLIENT_ID = '829625454416-p55tk57ep55r6ak989h32c0sbjhujs16.apps.googleusercontent.com';
+/* Gdrive client id is not secret, this is intentional as it is only usable on my site
 
 /* ============================================================
    OPTIONAL EXTRA SOURCE DATA
