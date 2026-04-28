@@ -10,6 +10,7 @@ const WEAPON_ROWS   = 8;
 const SPELL_ROWS    = 35;
 const SPELL_LEVELS  = 9;
 const LS_KEY        = 'dnd5e_char_sheet';
+const GDRIVE_CLIENT_ID = 'placeholder';
 
 /* ============================================================
    OPTIONAL EXTRA SOURCE DATA
