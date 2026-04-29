@@ -769,14 +769,11 @@ function bindEvents() {
   document.getElementById('btn-export').addEventListener('click', exportJSON);
   document.getElementById('import-file').addEventListener('change', importJSON);
   document.getElementById('btn-print').addEventListener('click', () => window.print());
-  document.getElementById('btn-theme').addEventListener('click', toggleTheme);
   document.getElementById('btn-characters').addEventListener('click', openCharacterManager);
   document.getElementById('btn-pointbuy').addEventListener('click', openPointBuy);
   document.getElementById('btn-rules').addEventListener('click', openRulesRef);
   document.getElementById('btn-monsters').addEventListener('click', openMonsterBrowser);
   document.getElementById('source-files')?.addEventListener('change', e => loadSourceFiles(e.target.files));
-  document.getElementById('btn-drive')?.addEventListener('click', openDrivePanel);
-  document.getElementById('btn-drive-connect')?.addEventListener('click', connectGoogleDrive);
   document.getElementById('btn-source-manager')?.addEventListener('click', openSourceManager);
 
   // Close SRD overlays on backdrop click
