@@ -2054,35 +2054,49 @@ function initConcentration() {
 /* ============================================================
    SRD PRESETS — Subclass
    ============================================================ */
+function findSubclassClassKey(input) {
+  const cls = (input || '').trim().toLowerCase();
+  const subclasses = getAllSubclasses();
+
+  return Object.keys(subclasses).find(
+    key => key.toLowerCase() === cls
+  );
+}
+
 function openSubclassPresets() {
   const popup = document.getElementById('subclass-popup');
-  const list  = document.getElementById('subclass-popup-list');
+  const list = document.getElementById('subclass-popup-list');
   const title = document.getElementById('subclass-popup-title');
+
   if (!popup || !list) return;
-  if (typeof SRD_SUBCLASSES === 'undefined') return;
 
-  const cls     = document.getElementById('main-class')?.value || '';
-  const options = getAllSubclasses()[cls];
+  const rawClass = document.getElementById('main-class')?.value || '';
+  const matchedClass = findSubclassClassKey(rawClass);
+  const options = matchedClass ? getAllSubclasses()[matchedClass] : [];
 
-  title.textContent = cls ? `${cls} Subclasses` : 'Subclasses';
+  title.textContent = rawClass.trim()
+    ? `${rawClass.trim()} Subclasses`
+    : 'Subclasses';
 
   if (!options || options.length === 0) {
-    list.innerHTML = `<p class="srd-popup-empty">${cls ? 'No subclasses for ' + escSrd(cls) + '.' : 'Select a class first.'}</p>`;
+    list.innerHTML = `
+      <div class="subclass-popup-empty">
+        No subclasses found for "${rawClass.trim()}". Check spelling or load a source with subclasses for this class.
+      </div>
+    `;
   } else {
     list.innerHTML = options.map(sub =>
-      `<button class="srd-popup-item" onclick="applySubclass(${JSON.stringify(sub)})">${sub}</button>`
+      `<button type="button" onclick="applySubclass('${sub.replace(/'/g, "\\'")}')">${sub}</button>`
     ).join('');
   }
 
-  // Position below the button
-  const btn  = document.getElementById('btn-subclass-presets');
+  const btn = document.getElementById('btn-subclass-presets');
   const rect = btn.getBoundingClientRect();
-  popup.style.top  = (rect.bottom + window.scrollY + 4) + 'px';
-  popup.style.left = (rect.left  + window.scrollX)     + 'px';
 
+  popup.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+  popup.style.left = (rect.left + window.scrollX) + 'px';
   popup.classList.remove('hidden');
 }
-
 function closeSubclassPresets() {
   document.getElementById('subclass-popup')?.classList.add('hidden');
 }
