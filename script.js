@@ -2739,3 +2739,27 @@ function renderCombat() {
 }
 
 applySystem();
+
+document.addEventListener("DOMContentLoaded", () => {
+  const openVttBtn = document.getElementById("openVttBtn");
+  const vttModal = document.getElementById("vttModal");
+
+  if (!openVttBtn) {
+    console.error("VTT button not found. Add id='openVttBtn' to the button.");
+    return;
+  }
+
+  if (!vttModal) {
+    console.error("VTT modal not found. Add id='vttModal' to the modal.");
+    return;
+  }
+
+  openVttBtn.addEventListener("click", () => {
+    vttModal.classList.remove("hidden");
+    vttModal.setAttribute("aria-hidden", "false");
+
+    if (typeof renderVtt === "function") {
+      renderVtt();
+    }
+  });
+});
