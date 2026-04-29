@@ -101,7 +101,7 @@ async function connectGoogleDrive() {
 function getDriveToken() {
   return gDriveAccessToken;
 }
-let _extraSources = []; // [{ name, spells, feats, subclasses, monsters }, …]
+let _extraSources = []; // [{ name, spells, feats, subclasses, monsters, scripts }, …]
 
 function getSourceLibrary() {
   try { return JSON.parse(localStorage.getItem(SOURCE_LIBRARY_KEY)) || []; }
@@ -123,10 +123,13 @@ function restoreLoadedSources() {
     feats: src.feats || [],
     subclasses: src.subclasses || {},
     monsters: src.monsters || [],
+    scripts: normalizeSourceScripts(src),
+    scriptTrusted: Boolean(src.scriptTrusted),
     driveFileId: src.driveFileId || null,
     syncedAt: src.syncedAt || null,
   }));
   updateSourceFilters();
+  runScriptsForSources(_extraSources, 'restored saved source');
 }
 
 /** Returns all spells (SRD + any loaded sources), each tagged with a .src field. */
@@ -172,6 +175,104 @@ function getAllSubclasses() {
 /* ============================================================
    OPTIONAL SOURCE DATA LOADER
    ============================================================ */
+
+function normalizeSourceScripts(data) {
+  const scripts = [];
+  if (typeof data?.script === 'string' && data.script.trim()) {
+    scripts.push({ name: 'script', code: data.script });
+  }
+  if (Array.isArray(data?.scripts)) {
+    data.scripts.forEach((item, index) => {
+      if (typeof item === 'string' && item.trim()) {
+        scripts.push({ name: `scripts[${index}]`, code: item });
+      } else if (item && typeof item === 'object' && typeof item.code === 'string' && item.code.trim()) {
+        scripts.push({
+          name: typeof item.name === 'string' && item.name.trim() ? item.name.trim() : `scripts[${index}]`,
+          code: item.code
+        });
+      }
+    });
+  }
+  return scripts;
+}
+
+function hasSourceScripts(src) {
+  return normalizeSourceScripts(src).length > 0;
+}
+
+function confirmSourceScriptExecution(src, context = 'source') {
+  if (!hasSourceScripts(src)) return false;
+  if (src.scriptTrusted) return true;
+
+  const scriptCount = normalizeSourceScripts(src).length;
+  const message = [
+    '⚠️ WARNING: This source JSON contains JavaScript.',
+    '',
+    `Source: ${src.name || src.source || 'Unnamed Source'}`,
+    `Scripts: ${scriptCount}`,
+    `Loaded from: ${context}`,
+    '',
+    'Only run this if you fully trust where the JSON came from.',
+    'JavaScript can read/modify this page, access localStorage, make web requests, and affect your saved FollyVTT data.',
+    '',
+    'Run this source JavaScript now?'
+  ].join('\n');
+
+  return confirm(message);
+}
+
+function runSourceScripts(src, context = 'source') {
+  const scripts = normalizeSourceScripts(src);
+  if (scripts.length === 0) return { ran: 0, skipped: 0, errors: [] };
+  if (!confirmSourceScriptExecution(src, context)) {
+    return { ran: 0, skipped: scripts.length, errors: [] };
+  }
+
+  src.scriptTrusted = true;
+  const errors = [];
+  const api = {
+    source: src,
+    getSources: () => _extraSources,
+    getAllSpells,
+    getAllFeats,
+    getAllMonsters,
+    getAllSubclasses,
+    recalcAll,
+    saveToStorage,
+    updateSourceFilters,
+    renderSourceManagerList,
+    filterSpells: () => typeof filterSpells === 'function' && filterSpells(),
+    filterFeats: () => typeof filterFeats === 'function' && filterFeats(),
+    filterMonsters: () => typeof filterMonsters === 'function' && filterMonsters(),
+  };
+
+  scripts.forEach(script => {
+    try {
+      // Modding hook: scripts receive a small FollyVTT API object, but still run in the page context.
+      new Function('FollyVTT', 'source', 'window', script.code)(api, src, window);
+      console.info(`[FollyVTT] Ran source script "${script.name}" from "${src.name}".`);
+    } catch (err) {
+      console.error(`[FollyVTT] Source script failed: ${src.name} / ${script.name}`, err);
+      errors.push(`${script.name}: ${err.message || String(err)}`);
+    }
+  });
+
+  return { ran: scripts.length - errors.length, skipped: 0, errors };
+}
+
+function runScriptsForSources(sources, context = 'source') {
+  const scriptErrors = [];
+  sources.forEach(src => {
+    const result = runSourceScripts(src, context);
+    if (result.errors.length) {
+      scriptErrors.push(`${src.name}: ${result.errors.join('; ')}`);
+    }
+  });
+  if (scriptErrors.length) {
+    alert('Some source JavaScript failed:\n' + scriptErrors.map(e => '  ' + e).join('\n'));
+  }
+}
+
 function validateSourceData(data) {
   if (typeof data !== 'object' || data === null || Array.isArray(data)) {
     throw new Error('Source data must be a JSON object.');
@@ -202,6 +303,19 @@ function validateSourceData(data) {
     if (!Array.isArray(data.monsters)) throw new Error('"monsters" must be an array.');
     data.monsters.forEach((m, i) => {
       if (typeof m.name !== 'string') throw new Error(`monsters[${i}].name must be a string.`);
+    });
+  }
+  if (data.script !== undefined && typeof data.script !== 'string') {
+    throw new Error('"script" must be a string containing JavaScript.');
+  }
+  if (data.scripts !== undefined) {
+    if (!Array.isArray(data.scripts)) throw new Error('"scripts" must be an array of strings or { name, code } objects.');
+    data.scripts.forEach((script, i) => {
+      const validString = typeof script === 'string';
+      const validObject = script && typeof script === 'object' && !Array.isArray(script) && typeof script.code === 'string';
+      if (!validString && !validObject) {
+        throw new Error(`scripts[${i}] must be a string or an object with a string "code" field.`);
+      }
     });
   }
 }
@@ -261,12 +375,18 @@ function loadSourceFiles(files) {
           feats:      data.feats      || [],
           subclasses: data.subclasses || {},
           monsters:   data.monsters   || [],
+          scripts:    normalizeSourceScripts(data),
+          scriptTrusted: false,
         };
         if (existing >= 0) {
           _extraSources[existing] = entry;
           replaced.push(name);
         } else {
           _extraSources.push(entry);
+        }
+        const scriptResult = runSourceScripts(entry, file.name);
+        if (scriptResult.errors.length) {
+          errors.push(`${file.name} JavaScript: ${scriptResult.errors.join('; ')}`);
         }
         loaded++;
         if (loaded + errors.length === total) finalize();
@@ -284,7 +404,8 @@ function loadSourceFiles(files) {
     renderSourceManagerList();
     const summary = _extraSources.map(s =>
       `  ${s.name}: ${s.spells.length} spells, ${s.feats.length} feats, ` +
-      `${Object.keys(s.subclasses).length} subclass groups, ${s.monsters.length} monsters`
+      `${Object.keys(s.subclasses).length} subclass groups, ${s.monsters.length} monsters, ` +
+      `${(s.scripts || []).length} script(s)`
     ).join('\n');
     let msg = '';
     if (loaded > 0) {
@@ -1564,7 +1685,7 @@ async function syncLoadedSourcesToDrive() {
   if (_extraSources.length === 0) { alert('No loaded sources to sync. Load a source JSON first.'); return; }
   try {
     for (const src of _extraSources) {
-      const payload = { kind: 'dnd5e-source', source: src.name, syncedAt: nowStamp(), spells: src.spells || [], feats: src.feats || [], subclasses: src.subclasses || {}, monsters: src.monsters || [] };
+      const payload = { kind: 'dnd5e-source', source: src.name, syncedAt: nowStamp(), spells: src.spells || [], feats: src.feats || [], subclasses: src.subclasses || {}, monsters: src.monsters || [], scripts: src.scripts || [] };
       const saved = src.driveFileId ? await updateDriveJsonFile(src.driveFileId, payload) : await createDriveJsonFile(`${GDRIVE_SOURCE_PREFIX}${safeFilePart(src.name)}.json`, payload);
       src.driveFileId = saved.id || src.driveFileId;
       src.syncedAt = saved.modifiedTime || nowStamp();
@@ -1580,9 +1701,10 @@ async function loadDriveSource(fileId) {
     const payload = await readDriveJson(fileId);
     validateSourceData(payload);
     const name = (payload.source || payload.name || 'Drive Source').trim();
-    const entry = { name, spells: payload.spells || [], feats: payload.feats || [], subclasses: payload.subclasses || {}, monsters: payload.monsters || [], driveFileId: fileId, syncedAt: payload.syncedAt || nowStamp() };
+    const entry = { name, spells: payload.spells || [], feats: payload.feats || [], subclasses: payload.subclasses || {}, monsters: payload.monsters || [], scripts: normalizeSourceScripts(payload), scriptTrusted: false, driveFileId: fileId, syncedAt: payload.syncedAt || nowStamp() };
     const existing = _extraSources.findIndex(s => s.name === name);
     if (existing >= 0) _extraSources[existing] = entry; else _extraSources.push(entry);
+    runSourceScripts(entry, 'Google Drive source');
     persistLoadedSources();
     updateSourceFilters();
     renderSourceManagerList();
@@ -1617,12 +1739,28 @@ function renderSourceManagerList() {
     div.innerHTML = `
       <div class="char-mgr-info">
         <span class="char-mgr-name">${escapeHtml(src.name)}</span>
-        <span class="char-mgr-meta">${src.spells.length} spells · ${src.feats.length} feats · ${Object.keys(src.subclasses || {}).length} subclass groups · ${(src.monsters || []).length} monsters</span>
+        <span class="char-mgr-meta">${src.spells.length} spells · ${src.feats.length} feats · ${Object.keys(src.subclasses || {}).length} subclass groups · ${(src.monsters || []).length} monsters · ${(src.scripts || []).length} script(s)</span>
         <span class="char-mgr-date">${src.driveFileId ? 'Drive synced' : 'Local only'}${src.syncedAt ? ' · ' + friendlyDate(src.syncedAt) : ''}</span>
       </div>
-      <div class="char-mgr-entry-actions"><button class="char-mgr-btn delete" onclick="removeSource(${index})">🗑️ Remove</button></div>`;
+      <div class="char-mgr-entry-actions">
+        ${(src.scripts || []).length ? `<button class="char-mgr-btn load" onclick="rerunSourceScripts(${index})">▶️ Run JS</button>` : ''}
+        <button class="char-mgr-btn delete" onclick="removeSource(${index})">🗑️ Remove</button>
+      </div>`;
     list.appendChild(div);
   });
+}
+function rerunSourceScripts(index) {
+  if (index < 0 || index >= _extraSources.length) return;
+  const src = _extraSources[index];
+  src.scriptTrusted = false;
+  const result = runSourceScripts(src, 'manual Source Manager run');
+  persistLoadedSources();
+  renderSourceManagerList();
+  if (result.errors.length) {
+    alert(`Source JavaScript had errors:\n${result.errors.map(e => '  ' + e).join('\n')}`);
+  } else if (result.ran > 0) {
+    alert(`Ran ${result.ran} JavaScript block(s) from "${src.name}".`);
+  }
 }
 function removeSource(index) {
   if (index < 0 || index >= _extraSources.length) return;
