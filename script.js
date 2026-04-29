@@ -2458,3 +2458,284 @@ const ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&
 function escSrd(str) {
   return String(str).replace(/[&<>"']/g, m => ESC_MAP[m]);
 }
+
+/* ============================================================
+   FollyVTT Addon — maps, tokens, combat, modular systems
+   ============================================================ */
+
+const VTT_KEY = "follyvtt_state";
+const SYSTEM_KEY = "follyvtt_system";
+
+const vttState = JSON.parse(localStorage.getItem(VTT_KEY) || `{
+  "map": "",
+  "tokens": [],
+  "grid": true,
+  "combatants": [],
+  "turn": 0
+}`);
+
+let activeSystem = JSON.parse(localStorage.getItem(SYSTEM_KEY) || `{
+  "name": "D&D 5e Default",
+  "abilities": ["STR", "DEX", "CON", "INT", "WIS", "CHA"],
+  "terms": {
+    "species": "Species",
+    "class": "Class",
+    "armorClass": "Armor Class"
+  },
+  "extraFields": []
+}`);
+
+function saveVtt() {
+  localStorage.setItem(VTT_KEY, JSON.stringify(vttState));
+}
+
+function saveSystem() {
+  localStorage.setItem(SYSTEM_KEY, JSON.stringify(activeSystem));
+}
+
+function openModalById(id) {
+  document.getElementById(id)?.classList.remove("hidden");
+}
+
+function closeModalById(id) {
+  document.getElementById(id)?.classList.add("hidden");
+}
+
+document.querySelectorAll("[data-close]").forEach(btn => {
+  btn.addEventListener("click", () => closeModalById(btn.dataset.close));
+});
+
+document.getElementById("openVttBtn")?.addEventListener("click", () => {
+  openModalById("vttModal");
+  renderVtt();
+});
+
+document.getElementById("loadSystemBtn")?.addEventListener("click", () => {
+  document.getElementById("systemJsonInput").click();
+});
+
+document.getElementById("systemJsonInput")?.addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const json = JSON.parse(await file.text());
+  activeSystem = {
+    ...activeSystem,
+    ...json,
+    terms: { ...activeSystem.terms, ...(json.terms || {}) },
+    extraFields: json.extraFields || []
+  };
+
+  saveSystem();
+  applySystem();
+});
+
+function applySystem() {
+  const modularRoot = document.getElementById("modularSheetFields");
+  if (!modularRoot) return;
+
+  modularRoot.innerHTML = "";
+
+  for (const field of activeSystem.extraFields || []) {
+    const wrap = document.createElement("label");
+    wrap.className = "system-field";
+
+    const label = document.createElement("span");
+    label.textContent = field.label || field.id;
+
+    let input;
+
+    if (field.type === "textarea") {
+      input = document.createElement("textarea");
+    } else if (field.type === "select") {
+      input = document.createElement("select");
+      for (const option of field.options || []) {
+        const opt = document.createElement("option");
+        opt.value = option;
+        opt.textContent = option;
+        input.appendChild(opt);
+      }
+    } else {
+      input = document.createElement("input");
+      input.type = field.type || "text";
+    }
+
+    input.dataset.systemField = field.id;
+    input.placeholder = field.placeholder || "";
+
+    wrap.append(label, input);
+    modularRoot.appendChild(wrap);
+  }
+}
+
+document.getElementById("mapUpload")?.addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    vttState.map = reader.result;
+    saveVtt();
+    renderVtt();
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById("tokenUpload")?.addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    vttState.tokens.push({
+      id: crypto.randomUUID(),
+      name: file.name.replace(/\.[^/.]+$/, ""),
+      img: reader.result,
+      x: 100,
+      y: 100,
+      size: 50
+    });
+
+    saveVtt();
+    renderVtt();
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById("toggleGridBtn")?.addEventListener("click", () => {
+  vttState.grid = !vttState.grid;
+  saveVtt();
+  renderVtt();
+});
+
+document.getElementById("clearTokensBtn")?.addEventListener("click", () => {
+  vttState.tokens = [];
+  saveVtt();
+  renderVtt();
+});
+
+function renderVtt() {
+  const mapImage = document.getElementById("mapImage");
+  const gridLayer = document.getElementById("gridLayer");
+  const tokenLayer = document.getElementById("tokenLayer");
+
+  if (!mapImage || !gridLayer || !tokenLayer) return;
+
+  mapImage.src = vttState.map || "";
+  gridLayer.classList.toggle("hidden", !vttState.grid);
+
+  tokenLayer.innerHTML = "";
+
+  for (const token of vttState.tokens) {
+    const img = document.createElement("img");
+    img.className = "vtt-token";
+    img.src = token.img;
+    img.title = token.name;
+    img.style.left = `${token.x}px`;
+    img.style.top = `${token.y}px`;
+    img.style.width = `${token.size}px`;
+    img.style.height = `${token.size}px`;
+
+    makeTokenDraggable(img, token);
+    tokenLayer.appendChild(img);
+  }
+
+  renderCombat();
+}
+
+function makeTokenDraggable(el, token) {
+  let dragging = false;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  el.addEventListener("pointerdown", e => {
+    dragging = true;
+    el.setPointerCapture(e.pointerId);
+    offsetX = e.offsetX;
+    offsetY = e.offsetY;
+    el.classList.add("selected");
+  });
+
+  el.addEventListener("pointermove", e => {
+    if (!dragging) return;
+
+    const parentRect = el.parentElement.getBoundingClientRect();
+    token.x = Math.round((e.clientX - parentRect.left - offsetX) / 50) * 50;
+    token.y = Math.round((e.clientY - parentRect.top - offsetY) / 50) * 50;
+
+    el.style.left = `${token.x}px`;
+    el.style.top = `${token.y}px`;
+  });
+
+  el.addEventListener("pointerup", () => {
+    dragging = false;
+    el.classList.remove("selected");
+    saveVtt();
+  });
+}
+
+document.getElementById("addCombatantBtn")?.addEventListener("click", () => {
+  const name = prompt("Combatant name?");
+  if (!name) return;
+
+  const initiative = Number(prompt("Initiative?", "0")) || 0;
+
+  vttState.combatants.push({
+    id: crypto.randomUUID(),
+    name,
+    initiative,
+    hp: ""
+  });
+
+  vttState.combatants.sort((a, b) => b.initiative - a.initiative);
+  saveVtt();
+  renderCombat();
+});
+
+document.getElementById("nextTurnBtn")?.addEventListener("click", () => {
+  if (!vttState.combatants.length) return;
+  vttState.turn = (vttState.turn + 1) % vttState.combatants.length;
+  saveVtt();
+  renderCombat();
+});
+
+function renderCombat() {
+  const list = document.getElementById("combatList");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  vttState.combatants.forEach((c, i) => {
+    const row = document.createElement("div");
+    row.className = "combatant";
+    row.classList.toggle("active", i === vttState.turn);
+
+    const name = document.createElement("strong");
+    name.textContent = c.name;
+
+    const init = document.createElement("input");
+    init.type = "number";
+    init.value = c.initiative;
+    init.title = "Initiative";
+    init.addEventListener("change", () => {
+      c.initiative = Number(init.value) || 0;
+      vttState.combatants.sort((a, b) => b.initiative - a.initiative);
+      saveVtt();
+      renderCombat();
+    });
+
+    const del = document.createElement("button");
+    del.textContent = "×";
+    del.addEventListener("click", () => {
+      vttState.combatants = vttState.combatants.filter(x => x.id !== c.id);
+      vttState.turn = Math.min(vttState.turn, vttState.combatants.length - 1);
+      saveVtt();
+      renderCombat();
+    });
+
+    row.append(name, init, del);
+    list.appendChild(row);
+  });
+}
+
+applySystem();
