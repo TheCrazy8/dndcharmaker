@@ -101,7 +101,7 @@ async function connectGoogleDrive() {
 function getDriveToken() {
   return gDriveAccessToken;
 }
-let _extraSources = []; // [{ name, spells, feats, subclasses, monsters, scripts }, …]
+let _extraSources = []; // [{ name, spells, feats, subclasses, monsters, fields, html, abilities }, …]
 
 function getSourceLibrary() {
   try { return JSON.parse(localStorage.getItem(SOURCE_LIBRARY_KEY)) || []; }
@@ -123,13 +123,14 @@ function restoreLoadedSources() {
     feats: src.feats || [],
     subclasses: src.subclasses || {},
     monsters: src.monsters || [],
-    scripts: normalizeSourceScripts(src),
-    scriptTrusted: Boolean(src.scriptTrusted),
+    fields: src.fields || [],
+    html: src.html || [],
+    abilities: src.abilities || src.abilityScores || [],
     driveFileId: src.driveFileId || null,
     syncedAt: src.syncedAt || null,
   }));
   updateSourceFilters();
-  runScriptsForSources(_extraSources, 'restored saved source');
+  renderSourceExtensions();
 }
 
 /** Returns all spells (SRD + any loaded sources), each tagged with a .src field. */
@@ -175,104 +176,6 @@ function getAllSubclasses() {
 /* ============================================================
    OPTIONAL SOURCE DATA LOADER
    ============================================================ */
-
-function normalizeSourceScripts(data) {
-  const scripts = [];
-  if (typeof data?.script === 'string' && data.script.trim()) {
-    scripts.push({ name: 'script', code: data.script });
-  }
-  if (Array.isArray(data?.scripts)) {
-    data.scripts.forEach((item, index) => {
-      if (typeof item === 'string' && item.trim()) {
-        scripts.push({ name: `scripts[${index}]`, code: item });
-      } else if (item && typeof item === 'object' && typeof item.code === 'string' && item.code.trim()) {
-        scripts.push({
-          name: typeof item.name === 'string' && item.name.trim() ? item.name.trim() : `scripts[${index}]`,
-          code: item.code
-        });
-      }
-    });
-  }
-  return scripts;
-}
-
-function hasSourceScripts(src) {
-  return normalizeSourceScripts(src).length > 0;
-}
-
-function confirmSourceScriptExecution(src, context = 'source') {
-  if (!hasSourceScripts(src)) return false;
-  if (src.scriptTrusted) return true;
-
-  const scriptCount = normalizeSourceScripts(src).length;
-  const message = [
-    '⚠️ WARNING: This source JSON contains JavaScript.',
-    '',
-    `Source: ${src.name || src.source || 'Unnamed Source'}`,
-    `Scripts: ${scriptCount}`,
-    `Loaded from: ${context}`,
-    '',
-    'Only run this if you fully trust where the JSON came from.',
-    'JavaScript can read/modify this page, access localStorage, make web requests, and affect your saved FollyVTT data.',
-    '',
-    'Run this source JavaScript now?'
-  ].join('\n');
-
-  return confirm(message);
-}
-
-function runSourceScripts(src, context = 'source') {
-  const scripts = normalizeSourceScripts(src);
-  if (scripts.length === 0) return { ran: 0, skipped: 0, errors: [] };
-  if (!confirmSourceScriptExecution(src, context)) {
-    return { ran: 0, skipped: scripts.length, errors: [] };
-  }
-
-  src.scriptTrusted = true;
-  const errors = [];
-  const api = {
-    source: src,
-    getSources: () => _extraSources,
-    getAllSpells,
-    getAllFeats,
-    getAllMonsters,
-    getAllSubclasses,
-    recalcAll,
-    saveToStorage,
-    updateSourceFilters,
-    renderSourceManagerList,
-    filterSpells: () => typeof filterSpells === 'function' && filterSpells(),
-    filterFeats: () => typeof filterFeats === 'function' && filterFeats(),
-    filterMonsters: () => typeof filterMonsters === 'function' && filterMonsters(),
-  };
-
-  scripts.forEach(script => {
-    try {
-      // Modding hook: scripts receive a small FollyVTT API object, but still run in the page context.
-      new Function('FollyVTT', 'source', 'window', script.code)(api, src, window);
-      console.info(`[FollyVTT] Ran source script "${script.name}" from "${src.name}".`);
-    } catch (err) {
-      console.error(`[FollyVTT] Source script failed: ${src.name} / ${script.name}`, err);
-      errors.push(`${script.name}: ${err.message || String(err)}`);
-    }
-  });
-
-  return { ran: scripts.length - errors.length, skipped: 0, errors };
-}
-
-function runScriptsForSources(sources, context = 'source') {
-  const scriptErrors = [];
-  sources.forEach(src => {
-    const result = runSourceScripts(src, context);
-    if (result.errors.length) {
-      scriptErrors.push(`${src.name}: ${result.errors.join('; ')}`);
-    }
-  });
-  if (scriptErrors.length) {
-    alert('Some source JavaScript failed:\n' + scriptErrors.map(e => '  ' + e).join('\n'));
-  }
-}
-
 function validateSourceData(data) {
   if (typeof data !== 'object' || data === null || Array.isArray(data)) {
     throw new Error('Source data must be a JSON object.');
@@ -305,17 +208,20 @@ function validateSourceData(data) {
       if (typeof m.name !== 'string') throw new Error(`monsters[${i}].name must be a string.`);
     });
   }
-  if (data.script !== undefined && typeof data.script !== 'string') {
-    throw new Error('"script" must be a string containing JavaScript.');
+  if (data.fields !== undefined) {
+    if (!Array.isArray(data.fields)) throw new Error('"fields" must be an array.');
+    data.fields.forEach((f, i) => {
+      if (typeof f.key !== 'string' || !f.key.trim()) throw new Error(`fields[${i}].key must be a non-empty string.`);
+      if (typeof f.label !== 'string' || !f.label.trim()) throw new Error(`fields[${i}].label must be a non-empty string.`);
+    });
   }
-  if (data.scripts !== undefined) {
-    if (!Array.isArray(data.scripts)) throw new Error('"scripts" must be an array of strings or { name, code } objects.');
-    data.scripts.forEach((script, i) => {
-      const validString = typeof script === 'string';
-      const validObject = script && typeof script === 'object' && !Array.isArray(script) && typeof script.code === 'string';
-      if (!validString && !validObject) {
-        throw new Error(`scripts[${i}] must be a string or an object with a string "code" field.`);
-      }
+  if (data.html !== undefined && typeof data.html !== 'string' && !Array.isArray(data.html)) throw new Error('"html" must be a string or an array.');
+  const abilityList = data.abilities || data.abilityScores;
+  if (abilityList !== undefined) {
+    if (!Array.isArray(abilityList)) throw new Error('"abilities" / "abilityScores" must be an array.');
+    abilityList.forEach((ab, i) => {
+      if (typeof ab.id !== 'string' || !ab.id.trim()) throw new Error(`abilities[${i}].id must be a non-empty string.`);
+      if (typeof ab.name !== 'string' || !ab.name.trim()) throw new Error(`abilities[${i}].name must be a non-empty string.`);
     });
   }
 }
@@ -354,7 +260,6 @@ function updateSourceFilters() {
 function loadSourceFiles(files) {
   if (!files || files.length === 0) return;
   let loaded = 0;
-  let completed = 0;
   const errors = [];
   const replaced = [];
   const total = files.length;
@@ -376,8 +281,9 @@ function loadSourceFiles(files) {
           feats:      data.feats      || [],
           subclasses: data.subclasses || {},
           monsters:   data.monsters   || [],
-          scripts:    normalizeSourceScripts(data),
-          scriptTrusted: false,
+          fields:     data.fields     || [],
+          html:       data.html       || [],
+          abilities:  data.abilities || data.abilityScores || [],
         };
         if (existing >= 0) {
           _extraSources[existing] = entry;
@@ -385,22 +291,12 @@ function loadSourceFiles(files) {
         } else {
           _extraSources.push(entry);
         }
-        const scriptResult = runSourceScripts(entry, file.name);
-        if (scriptResult.errors.length) {
-          errors.push(`${file.name} JavaScript: ${scriptResult.errors.join('; ')}`);
-        }
         loaded++;
+        if (loaded + errors.length === total) finalize();
       } catch (err) {
         errors.push(`${file.name}: ${err.message}`);
-      } finally {
-        completed++;
-        if (completed === total) finalize();
+        if (loaded + errors.length === total) finalize();
       }
-    };
-    reader.onerror = () => {
-      errors.push(`${file.name}: failed to read file.`);
-      completed++;
-      if (completed === total) finalize();
     };
     reader.readAsText(file);
   });
@@ -408,11 +304,12 @@ function loadSourceFiles(files) {
   function finalize() {
     persistLoadedSources();
     updateSourceFilters();
+    renderSourceExtensions();
     renderSourceManagerList();
     const summary = _extraSources.map(s =>
       `  ${s.name}: ${s.spells.length} spells, ${s.feats.length} feats, ` +
       `${Object.keys(s.subclasses).length} subclass groups, ${s.monsters.length} monsters, ` +
-      `${(s.scripts || []).length} script(s)`
+      `${(s.fields || []).length} fields, ${normalizeSourceHtmlBlocks(s.html).length} HTML blocks, ${(s.abilities || []).length} abilities`
     ).join('\n');
     let msg = '';
     if (loaded > 0) {
@@ -702,6 +599,8 @@ function recalcAll() {
 
   // Inventory weight
   calcInventory();
+
+  recalcSourceAbilities();
 }
 
 /* ============================================================
@@ -837,6 +736,7 @@ function loadFromStorage() {
 }
 
 function applyData(data) {
+  renderSourceExtensions();
   document.querySelectorAll('[data-key]').forEach(el => {
     const key = el.dataset.key;
     if (!(key in data)) return;
@@ -1692,7 +1592,7 @@ async function syncLoadedSourcesToDrive() {
   if (_extraSources.length === 0) { alert('No loaded sources to sync. Load a source JSON first.'); return; }
   try {
     for (const src of _extraSources) {
-      const payload = { kind: 'dnd5e-source', source: src.name, syncedAt: nowStamp(), spells: src.spells || [], feats: src.feats || [], subclasses: src.subclasses || {}, monsters: src.monsters || [], scripts: src.scripts || [] };
+      const payload = { kind: 'dnd5e-source', source: src.name, syncedAt: nowStamp(), spells: src.spells || [], feats: src.feats || [], subclasses: src.subclasses || {}, monsters: src.monsters || [], fields: src.fields || [], html: src.html || [], abilities: src.abilities || [] };
       const saved = src.driveFileId ? await updateDriveJsonFile(src.driveFileId, payload) : await createDriveJsonFile(`${GDRIVE_SOURCE_PREFIX}${safeFilePart(src.name)}.json`, payload);
       src.driveFileId = saved.id || src.driveFileId;
       src.syncedAt = saved.modifiedTime || nowStamp();
@@ -1708,12 +1608,12 @@ async function loadDriveSource(fileId) {
     const payload = await readDriveJson(fileId);
     validateSourceData(payload);
     const name = (payload.source || payload.name || 'Drive Source').trim();
-    const entry = { name, spells: payload.spells || [], feats: payload.feats || [], subclasses: payload.subclasses || {}, monsters: payload.monsters || [], scripts: normalizeSourceScripts(payload), scriptTrusted: false, driveFileId: fileId, syncedAt: payload.syncedAt || nowStamp() };
+    const entry = { name, spells: payload.spells || [], feats: payload.feats || [], subclasses: payload.subclasses || {}, monsters: payload.monsters || [], fields: payload.fields || [], html: payload.html || [], abilities: payload.abilities || payload.abilityScores || [], driveFileId: fileId, syncedAt: payload.syncedAt || nowStamp() };
     const existing = _extraSources.findIndex(s => s.name === name);
     if (existing >= 0) _extraSources[existing] = entry; else _extraSources.push(entry);
-    runSourceScripts(entry, 'Google Drive source');
     persistLoadedSources();
     updateSourceFilters();
+    renderSourceExtensions();
     renderSourceManagerList();
     alert(`Loaded source "${name}" from Google Drive.`);
   } catch (err) { alert(err.message || String(err)); }
@@ -1746,28 +1646,12 @@ function renderSourceManagerList() {
     div.innerHTML = `
       <div class="char-mgr-info">
         <span class="char-mgr-name">${escapeHtml(src.name)}</span>
-        <span class="char-mgr-meta">${src.spells.length} spells · ${src.feats.length} feats · ${Object.keys(src.subclasses || {}).length} subclass groups · ${(src.monsters || []).length} monsters · ${(src.scripts || []).length} script(s)</span>
+        <span class="char-mgr-meta">${src.spells.length} spells · ${src.feats.length} feats · ${Object.keys(src.subclasses || {}).length} subclass groups · ${(src.monsters || []).length} monsters · ${(src.fields || []).length} fields · ${normalizeSourceHtmlBlocks(src.html).length} HTML · ${(src.abilities || []).length} abilities</span>
         <span class="char-mgr-date">${src.driveFileId ? 'Drive synced' : 'Local only'}${src.syncedAt ? ' · ' + friendlyDate(src.syncedAt) : ''}</span>
       </div>
-      <div class="char-mgr-entry-actions">
-        ${(src.scripts || []).length ? `<button class="char-mgr-btn load" onclick="rerunSourceScripts(${index})">▶️ Run JS</button>` : ''}
-        <button class="char-mgr-btn delete" onclick="removeSource(${index})">🗑️ Remove</button>
-      </div>`;
+      <div class="char-mgr-entry-actions"><button class="char-mgr-btn delete" onclick="removeSource(${index})">🗑️ Remove</button></div>`;
     list.appendChild(div);
   });
-}
-function rerunSourceScripts(index) {
-  if (index < 0 || index >= _extraSources.length) return;
-  const src = _extraSources[index];
-  src.scriptTrusted = false;
-  const result = runSourceScripts(src, 'manual Source Manager run');
-  persistLoadedSources();
-  renderSourceManagerList();
-  if (result.errors.length) {
-    alert(`Source JavaScript had errors:\n${result.errors.map(e => '  ' + e).join('\n')}`);
-  } else if (result.ran > 0) {
-    alert(`Ran ${result.ran} JavaScript block(s) from "${src.name}".`);
-  }
 }
 function removeSource(index) {
   if (index < 0 || index >= _extraSources.length) return;
@@ -1780,6 +1664,138 @@ function removeSource(index) {
   if (document.getElementById('spell-browser-overlay') && !document.getElementById('spell-browser-overlay').classList.contains('hidden')) filterSpells();
   if (document.getElementById('feat-browser-overlay') && !document.getElementById('feat-browser-overlay').classList.contains('hidden')) filterFeats();
   if (document.getElementById('monster-browser-overlay') && !document.getElementById('monster-browser-overlay').classList.contains('hidden')) filterMonsters();
+}
+
+
+/* ============================================================
+   SOURCE-DEFINED SHEET EXTENSIONS
+   Sources can add custom fields, display HTML, and extra ability scores.
+   ============================================================ */
+const DEFAULT_ABILITY_DEFS = [
+  { id: 'str', abbr: 'STR', name: 'Strength' },
+  { id: 'dex', abbr: 'DEX', name: 'Dexterity' },
+  { id: 'con', abbr: 'CON', name: 'Constitution' },
+  { id: 'int', abbr: 'INT', name: 'Intelligence' },
+  { id: 'wis', abbr: 'WIS', name: 'Wisdom' },
+  { id: 'cha', abbr: 'CHA', name: 'Charisma' },
+];
+function normalizeSourceHtmlBlocks(value) {
+  if (!value) return [];
+  if (typeof value === 'string') return [{ title: 'Source HTML', html: value }];
+  if (!Array.isArray(value)) return [];
+  return value.map((block, i) => typeof block === 'string' ? { title: `HTML Block ${i + 1}`, html: block } : { title: block.title || `HTML Block ${i + 1}`, html: block.html || '' });
+}
+function normalizeSourceField(field, sourceName, i) {
+  const rawKey = String(field.key || `${sourceName}-field-${i}`).trim().replace(/[^a-zA-Z0-9_-]/g, '');
+  return { key: `src.${sourceName}.${rawKey}`, label: field.label || rawKey, type: field.type || 'text', placeholder: field.placeholder || '', defaultValue: field.default ?? '', options: Array.isArray(field.options) ? field.options : [] };
+}
+function getSourceAbilityDefs() {
+  const seen = new Set(DEFAULT_ABILITY_DEFS.map(a => a.id));
+  const defs = [];
+  _extraSources.forEach(src => (src.abilities || src.abilityScores || []).forEach(raw => {
+    const id = String(raw.id || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    if (!id || seen.has(id)) return;
+    seen.add(id);
+    defs.push({ id, abbr: (raw.abbr || raw.short || id).toUpperCase(), name: raw.name || raw.label || id, source: src.name, min: Number(raw.min ?? 1), max: Number(raw.max ?? 99), default: Number(raw.default ?? raw.score ?? 10), skills: Array.isArray(raw.skills) ? raw.skills : [] });
+  }));
+  return defs;
+}
+function renderSourceExtensions() {
+  const leftCol = document.querySelector('.left-col') || document.querySelector('.sheet-container');
+  if (!leftCol) return;
+  let host = document.getElementById('source-sheet-extensions');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'source-sheet-extensions';
+    host.className = 'source-sheet-extensions';
+    const abilities = document.querySelector('.abilities-section');
+    if (abilities && abilities.parentElement) abilities.insertAdjacentElement('afterend', host); else leftCol.appendChild(host);
+  }
+  const abilityDefs = getSourceAbilityDefs();
+  const fieldBlocks = _extraSources.flatMap(src => (src.fields || []).map((f, i) => ({ src: src.name, field: normalizeSourceField(f, src.name, i) })));
+  const htmlBlocks = _extraSources.flatMap(src => normalizeSourceHtmlBlocks(src.html).map(block => ({ src: src.name, ...block })));
+  let out = '';
+  if (abilityDefs.length) {
+    out += `<div class="section source-abilities-section"><h3 class="section-title">Source Ability Scores</h3>`;
+    abilityDefs.forEach(ab => {
+      const scoreKey = `${ab.id}Score`, saveKey = `${ab.id}SaveProf`;
+      out += `<div class="ability-block source-ability-block" id="ability-${escapeHtml(ab.id)}"><div class="ability-header"><span class="ability-name">${escapeHtml(ab.abbr)}</span><span class="ability-full">${escapeHtml(ab.name)} · ${escapeHtml(ab.source)}</span></div><div class="ability-body"><div class="score-mod-row"><div class="score-col"><label>Score</label><input type="number" class="ability-score source-ability-score" data-ability="${escapeHtml(ab.id)}" data-key="${escapeHtml(scoreKey)}" value="${escapeHtml(String(ab.default))}" min="${escapeHtml(String(ab.min))}" max="${escapeHtml(String(ab.max))}" /></div><div class="mod-col"><label>Mod</label><div class="mod-display" id="${escapeHtml(ab.id)}-mod">+0</div></div><div class="save-col"><label>Save</label><div class="save-row"><label class="checkbox-label"><input type="checkbox" data-key="${escapeHtml(saveKey)}" class="save-prof" data-ability="${escapeHtml(ab.id)}" /><span class="check-mark"></span></label><span class="save-mod" id="${escapeHtml(ab.id)}-save">+0</span></div></div></div>`;
+      if (ab.skills.length) {
+        out += '<div class="skills-list">';
+        ab.skills.forEach((sk, i) => {
+          const skKey = String(sk.key || sk.name || `${ab.id}Skill${i}`).replace(/[^a-zA-Z0-9_-]/g, '');
+          const label = sk.name || sk.label || skKey;
+          out += `<div class="skill-row"><label class="checkbox-label"><input type="checkbox" data-key="${escapeHtml(skKey)}" data-ability="${escapeHtml(ab.id)}" class="skill-prof source-skill-prof" /><span class="check-mark small"></span></label><span class="skill-mod" id="mod-${escapeHtml(skKey.toLowerCase())}">+0</span><span class="skill-name">${escapeHtml(label)}</span></div>`;
+        });
+        out += '</div>';
+      }
+      out += '</div></div>';
+    });
+    out += '</div>';
+  }
+  if (fieldBlocks.length) {
+    out += '<div class="section source-fields-section"><h3 class="section-title">Source Fields</h3><div class="source-fields-grid">';
+    fieldBlocks.forEach(({ src, field }) => {
+      out += `<div class="field-group source-field"><label>${escapeHtml(field.label)} (${escapeHtml(src)})</label>`;
+      if (field.type === 'textarea') out += `<textarea data-key="${escapeHtml(field.key)}" placeholder="${escapeHtml(field.placeholder)}">${escapeHtml(String(field.defaultValue))}</textarea>`;
+      else if (field.type === 'select') { out += `<select data-key="${escapeHtml(field.key)}"><option value="">—</option>`; field.options.forEach(opt => { const val = typeof opt === 'object' ? (opt.value ?? opt.label) : opt; const txt = typeof opt === 'object' ? (opt.label ?? opt.value) : opt; out += `<option value="${escapeHtml(String(val))}">${escapeHtml(String(txt))}</option>`; }); out += '</select>'; }
+      else if (field.type === 'checkbox') out += `<label class="inline-check-label"><input type="checkbox" data-key="${escapeHtml(field.key)}" /> Enabled</label>`;
+      else out += `<input type="${['number','date','text'].includes(field.type) ? field.type : 'text'}" data-key="${escapeHtml(field.key)}" placeholder="${escapeHtml(field.placeholder)}" value="${escapeHtml(String(field.defaultValue))}" />`;
+      out += '</div>';
+    });
+    out += '</div></div>';
+  }
+  if (htmlBlocks.length) {
+    out += '<div class="section source-html-section"><h3 class="section-title">Source HTML</h3>';
+    htmlBlocks.forEach(block => { out += `<article class="source-html-block"><h4>${escapeHtml(block.title)} <span>${escapeHtml(block.src)}</span></h4><div class="source-html-content">${sanitizeSourceHtml(block.html)}</div></article>`; });
+    out += '</div>';
+  }
+  host.innerHTML = out;
+  updateSpellAbilityOptions();
+  recalcSourceAbilities();
+}
+function sanitizeSourceHtml(raw) {
+  const tpl = document.createElement('template');
+  tpl.innerHTML = String(raw || '');
+  tpl.content.querySelectorAll('script, iframe, object, embed, link, meta').forEach(el => el.remove());
+  tpl.content.querySelectorAll('*').forEach(el => [...el.attributes].forEach(attr => { if (/^on/i.test(attr.name) || String(attr.value).trim().toLowerCase().startsWith('javascript:')) el.removeAttribute(attr.name); }));
+  return tpl.innerHTML;
+}
+function updateSpellAbilityOptions() {
+  const sel = document.getElementById('spell-ability');
+  if (!sel) return;
+  const current = sel.value;
+  sel.querySelectorAll('option[data-source-ability="true"]').forEach(o => o.remove());
+  getSourceAbilityDefs().forEach(ab => { const opt = document.createElement('option'); opt.value = ab.id; opt.dataset.sourceAbility = 'true'; opt.textContent = ab.name; sel.appendChild(opt); });
+  if ([...sel.options].some(o => o.value === current)) sel.value = current;
+}
+function recalcSourceAbilities() {
+  const pb = profBonus(Number(document.getElementById('level')?.value) || 1);
+  const sourceMods = {};
+  getSourceAbilityDefs().forEach(ab => {
+    const mod = abilityMod(getScore(ab.id));
+    sourceMods[ab.id] = mod;
+    const modEl = document.getElementById(`${ab.id}-mod`); if (modEl) modEl.textContent = formatMod(mod);
+    const saveEl = document.getElementById(`${ab.id}-save`); if (saveEl) saveEl.textContent = formatMod(mod + (isChecked(`${ab.id}SaveProf`) ? pb : 0));
+    (ab.skills || []).forEach((sk, i) => {
+      const skKey = String(sk.key || sk.name || `${ab.id}Skill${i}`).replace(/[^a-zA-Z0-9_-]/g, '');
+      const checkbox = document.querySelector(`[data-key="${skKey}"]`);
+      const val = mod + (checkbox?.dataset.expertise === 'true' ? 2 * pb : checkbox?.checked ? pb : 0);
+      const out = document.getElementById(`mod-${skKey.toLowerCase()}`); if (out) out.textContent = formatMod(val);
+    });
+  });
+
+  const spellAbility = document.getElementById('spell-ability')?.value;
+  if (spellAbility && sourceMods[spellAbility] !== undefined) {
+    const pbNow = profBonus(Number(document.getElementById('level')?.value) || 1);
+    const sm = sourceMods[spellAbility];
+    const spellModEl = document.getElementById('spell-mod');
+    const spellDCEl  = document.getElementById('spell-dc');
+    const spellAtkEl = document.getElementById('spell-atk');
+    if (spellModEl) spellModEl.textContent = formatMod(sm);
+    if (spellDCEl)  spellDCEl.textContent  = 8 + pbNow + sm;
+    if (spellAtkEl) spellAtkEl.textContent = formatMod(pbNow + sm);
+  }
 }
 
 /* ============================================================
@@ -2663,39 +2679,16 @@ document.getElementById("systemJsonInput")?.addEventListener("change", async e =
   const file = e.target.files[0];
   if (!file) return;
 
-  try {
-    const json = JSON.parse(await file.text());
-    activeSystem = {
-      ...activeSystem,
-      ...json,
-      terms: { ...activeSystem.terms, ...(json.terms || {}) },
-      extraFields: json.extraFields || []
-    };
+  const json = JSON.parse(await file.text());
+  activeSystem = {
+    ...activeSystem,
+    ...json,
+    terms: { ...activeSystem.terms, ...(json.terms || {}) },
+    extraFields: json.extraFields || []
+  };
 
-    saveSystem();
-    applySystem();
-
-    // Optional modding hook for system JSON files. Supports either:
-    //   "script": "console.log('hi')"
-    // or
-    //   "scripts": [{ "name": "My Script", "code": "console.log('hi')" }]
-    const systemScriptSource = {
-      name: activeSystem.name || file.name,
-      source: activeSystem.name || file.name,
-      scripts: normalizeSourceScripts(json),
-      scriptTrusted: false,
-      system: activeSystem
-    };
-    const result = runSourceScripts(systemScriptSource, `system file: ${file.name}`);
-    if (result.errors.length) {
-      alert('System JavaScript failed:\n' + result.errors.map(e => '  ' + e).join('\n'));
-    }
-
-    e.target.value = '';
-  } catch (err) {
-    console.error(err);
-    alert(`Could not load system JSON: ${err.message || err}`);
-  }
+  saveSystem();
+  applySystem();
 });
 
 function applySystem() {

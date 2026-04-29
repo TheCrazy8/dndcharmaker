@@ -3446,3 +3446,41 @@ body.dark-mode .condition-toggle input:checked + .condition-btn {
   gap: .25rem;
   margin-bottom: .75rem;
 }
+
+/* ---------- Source-defined sheet extensions ---------- */
+.source-sheet-extensions { display: flex; flex-direction: column; gap: 0.6rem; }
+.source-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.5rem;
+}
+.source-field textarea { min-height: 72px; }
+.source-html-block {
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius);
+  padding: 0.55rem;
+  margin-bottom: 0.5rem;
+  background: var(--bg-input);
+}
+.source-html-block h4 {
+  font-family: var(--font-heading);
+  color: var(--text-heading);
+  font-size: 0.78rem;
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+}
+.source-html-block h4 span {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  text-transform: none;
+  font-weight: 400;
+}
+.source-html-content {
+  color: var(--text-primary);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.source-html-content ul,
+.source-html-content ol { margin-left: 1.2rem; }
+.source-html-content table { margin-top: 0.4rem; }
+.source-ability-block .ability-full { color: var(--text-muted); }
