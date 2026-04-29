@@ -354,6 +354,7 @@ function updateSourceFilters() {
 function loadSourceFiles(files) {
   if (!files || files.length === 0) return;
   let loaded = 0;
+  let completed = 0;
   const errors = [];
   const replaced = [];
   const total = files.length;
@@ -389,11 +390,17 @@ function loadSourceFiles(files) {
           errors.push(`${file.name} JavaScript: ${scriptResult.errors.join('; ')}`);
         }
         loaded++;
-        if (loaded + errors.length === total) finalize();
       } catch (err) {
         errors.push(`${file.name}: ${err.message}`);
-        if (loaded + errors.length === total) finalize();
+      } finally {
+        completed++;
+        if (completed === total) finalize();
       }
+    };
+    reader.onerror = () => {
+      errors.push(`${file.name}: failed to read file.`);
+      completed++;
+      if (completed === total) finalize();
     };
     reader.readAsText(file);
   });
@@ -2656,16 +2663,39 @@ document.getElementById("systemJsonInput")?.addEventListener("change", async e =
   const file = e.target.files[0];
   if (!file) return;
 
-  const json = JSON.parse(await file.text());
-  activeSystem = {
-    ...activeSystem,
-    ...json,
-    terms: { ...activeSystem.terms, ...(json.terms || {}) },
-    extraFields: json.extraFields || []
-  };
+  try {
+    const json = JSON.parse(await file.text());
+    activeSystem = {
+      ...activeSystem,
+      ...json,
+      terms: { ...activeSystem.terms, ...(json.terms || {}) },
+      extraFields: json.extraFields || []
+    };
 
-  saveSystem();
-  applySystem();
+    saveSystem();
+    applySystem();
+
+    // Optional modding hook for system JSON files. Supports either:
+    //   "script": "console.log('hi')"
+    // or
+    //   "scripts": [{ "name": "My Script", "code": "console.log('hi')" }]
+    const systemScriptSource = {
+      name: activeSystem.name || file.name,
+      source: activeSystem.name || file.name,
+      scripts: normalizeSourceScripts(json),
+      scriptTrusted: false,
+      system: activeSystem
+    };
+    const result = runSourceScripts(systemScriptSource, `system file: ${file.name}`);
+    if (result.errors.length) {
+      alert('System JavaScript failed:\n' + result.errors.map(e => '  ' + e).join('\n'));
+    }
+
+    e.target.value = '';
+  } catch (err) {
+    console.error(err);
+    alert(`Could not load system JSON: ${err.message || err}`);
+  }
 });
 
 function applySystem() {
