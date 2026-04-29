@@ -26,19 +26,9 @@
       <button id="btn-print" class="action-btn" title="Print">🖨️ Print</button>
       <button id="btn-theme" class="action-btn" title="Toggle Dark/Light Mode">🌙 Dark</button>
       <button id="btn-characters" class="action-btn" title="Manage Characters">👤 Characters</button>
-      <button id="btn-drive" class="action-btn" title="Google Drive Sync">☁️ Drive</button>
-      <button id="btn-drive-connect" class="action-btn">☁️ Connect Drive</button>
       <button id="btn-pointbuy" class="action-btn" title="Point Buy Calculator">🧮 Point Buy</button>
       <button id="btn-rules" class="action-btn" title="SRD Rules Reference">📚 Rules</button>
       <button id="btn-monsters" class="action-btn" title="Monster Browser">🐉 Monsters</button>
-      <a href="privacy-policy.html" target="https://github.com/TheCrazy8/dndcharmaker/blob/main/privacypolicy.md" class="action-btn" title="Privacy Policy">
-      🔒 Privacy Policy
-      </a>
-
-      <a href="terms-of-service.html" target="https://github.com/TheCrazy8/dndcharmaker/blob/main/tos.md" class="action-btn" title="Terms of Service">
-      📜 Terms of Service
-      </a>
-
       <label class="action-btn" title="Load optional source data from local JSON files (not stored in repo). Multiple files may be selected at once.">
         📗 Load Sources
         <input type="file" id="source-files" accept=".json" multiple style="display:none" />
@@ -89,51 +79,13 @@
             <input type="text" id="species" data-key="species" placeholder="e.g. Human" />
           </div>
           <div class="field-group">
-            <label for="main-class">Main Class</label>
-            <select id="main-class" data-key="mainClass">
-              <option value="">— Select Class —</option>
-              <option>Abyssal</option>
-              <option>Artificer</option>
-              <option>Barbarian</option>
-              <option>Bard</option>
-              <option>Blood Hunter</option>
-              <option>Cleric</option>
-              <option>Dragon Knight</option>
-              <option>Druid</option>
-              <option>Elementalist</option>
-              <option>Fighter</option>
-              <option>Gunslinger</option>
-              <option>Illrigger</option>
-              <option>Kinetic</option>
-              <option>Magus</option>
-              <option>Martyr</option>
-              <option>Medium</option>
-              <option>Monk</option>
-              <option>Necromancer</option>
-              <option>Occultist</option>
-              <option>Paladin</option>
-              <option>Paragon</option>
-              <option>Psion</option>
-              <option>Pugilist</option>
-              <option>Ranger</option>
-              <option>Rogue</option>
-              <option>Runecrafter</option>
-              <option>Savant</option>
-              <option>Shaman</option>
-              <option>Shaper</option>
-              <option>Sorcerer</option>
-              <option>Spellblade</option>
-              <option>Summoner</option>
-              <option>Swashbuckler</option>
-              <option>Vessel</option>
-              <option>Vigilante</option>
-              <option>Warlock</option>
-              <option>Warlord</option>
-              <option>Weaver</option>
-              <option>Witch</option>
-              <option>Witcher</option>
-              <option>Wizard</option>
-            </select>
+            <label for="class">Main Class</label>
+              <input
+                id="class"
+                type="text"
+                placeholder="Enter class name"
+                autocomplete="off"
+            />
           </div>
           <div class="field-group">
             <label for="subclass">Subclass</label>
