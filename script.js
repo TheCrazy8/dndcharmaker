@@ -2518,10 +2518,7 @@ function renderVtt() {
   sc.tokens = (sc.tokens || []).map(normalizeToken);
   const mapImage = document.getElementById("mapImage"), gridLayer = document.getElementById("gridLayer"), fogLayer = document.getElementById("fogLayer"), tokenLayer = document.getElementById("tokenLayer"), canvas = document.getElementById("mapCanvas");
   if (!mapImage || !gridLayer || !fogLayer || !tokenLayer || !canvas) return;
-  mapImage.src = sc.map || "";
-  mapImage.style.display = sc.map ? "block" : "none";
-  const placeholder = document.getElementById("mapPlaceholder");
-  if (placeholder) placeholder.style.display = sc.map ? "none" : "grid";
+  mapImage.src = sc.map || ""; mapImage.style.display = sc.map ? "block" : "none";
   canvas.style.transform = `scale(${sc.zoom || 1})`;
   gridLayer.classList.toggle("hidden", !sc.grid); gridLayer.style.backgroundSize = `${sc.gridSize}px ${sc.gridSize}px`;
   fogLayer.classList.toggle("hidden", !sc.fog);
@@ -2634,154 +2631,34 @@ function applySystem() {
   }
 }
 function bindFollyVttEvents() {
-  const $ = id => document.getElementById(id);
   document.querySelectorAll("[data-close]").forEach(btn => btn.addEventListener("click", () => closeModalById(btn.dataset.close)));
-
-  $("openVttBtn")?.addEventListener("click", () => {
-    $("page5")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    renderVtt();
-  });
-
-  $("loadSystemBtn")?.addEventListener("click", () => $("systemJsonInput")?.click());
-  $("systemJsonInput")?.addEventListener("change", async e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const json = JSON.parse(await file.text());
-    activeSystem = { ...activeSystem, ...json, terms: { ...activeSystem.terms, ...(json.terms || {}) }, extraFields: json.extraFields || [] };
-    saveSystem();
-    applySystem();
-  });
-
-  $("mapUpload")?.addEventListener("change", async e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const sc = activeScene();
-    sc.map = await readFileAsDataURL(file);
-    sc.mapName = file.name;
-    renderVtt();
-  });
-
-  $("tokenUpload")?.addEventListener("change", async e => {
-    for (const file of Array.from(e.target.files || [])) {
-      activeScene().tokens.push(normalizeToken({
-        id: vttUid(),
-        name: file.name.replace(/\.[^/.]+$/, ""),
-        img: await readFileAsDataURL(file),
-        x: 100,
-        y: 100
-      }));
-    }
-    e.target.value = "";
-    renderVtt();
-  });
-
-  $("addBlankTokenBtn")?.addEventListener("click", () => {
-    const name = prompt("Token name?", "New Token");
-    if (!name) return;
-    activeScene().tokens.push(normalizeToken({ id: vttUid(), name, x: 100, y: 100 }));
-    renderVtt();
-  });
-
-  $("toggleGridBtn")?.addEventListener("click", () => { activeScene().grid = !activeScene().grid; renderVtt(); });
-  $("toggleFogBtn")?.addEventListener("click", () => { activeScene().fog = !activeScene().fog; renderVtt(); });
-  $("clearTokensBtn")?.addEventListener("click", () => {
-    if (confirm("Clear all tokens in this scene?")) {
-      activeScene().tokens = [];
-      selectedTokenId = null;
-      renderVtt();
-    }
-  });
-  $("sortCombatBtn")?.addEventListener("click", () => { sortCombatants(); renderVtt(); });
-  $("nextTurnBtn")?.addEventListener("click", () => {
-    if (vttState.combatants.length) vttState.turn = (vttState.turn + 1) % vttState.combatants.length;
-    renderVtt();
-  });
-  $("addCombatantBtn")?.addEventListener("click", () => {
-    const tok = selectedToken();
-    if (tok && confirm(`Add selected token "${tok.name}" to combat?`)) return addCombatantFromToken(tok);
-    const name = prompt("Combatant name?");
-    if (!name) return;
-    const initiative = Number(prompt("Initiative?", "0")) || 0;
-    vttState.combatants.push({ id: vttUid(), name, initiative, hp: "", ac: "" });
-    sortCombatants();
-    renderVtt();
-  });
-  $("addSceneBtn")?.addEventListener("click", () => {
-    const input = $("sceneNameInput");
-    const sc = defaultScene(input?.value?.trim() || `Scene ${vttState.scenes.length + 1}`);
-    vttState.scenes.push(sc);
-    vttState.activeSceneId = sc.id;
-    if (input) input.value = "";
-    renderVtt();
-  });
-
-  $("vttNotes")?.addEventListener("input", e => { activeScene().notes = e.target.value; saveVtt(); });
-  $("vttToolSelect")?.addEventListener("change", e => { currentTool = e.target.value; });
-  $("vttZoom")?.addEventListener("input", e => { activeScene().zoom = Number(e.target.value) / 100; renderVtt(); });
-  $("vttGridSize")?.addEventListener("change", e => { activeScene().gridSize = Math.max(20, Number(e.target.value) || 50); renderVtt(); });
-  $("vttGridFeet")?.addEventListener("change", e => { activeScene().gridFeet = Math.max(1, Number(e.target.value) || 5); renderVtt(); });
-  $("vttSnap")?.addEventListener("change", e => { activeScene().snap = e.target.checked; renderVtt(); });
-  $("vttCenterBtn")?.addEventListener("click", () => {
-    const vp = $("mapViewport");
-    if (vp) { vp.scrollLeft = 0; vp.scrollTop = 0; }
-  });
-
-  $("mapCanvas")?.addEventListener("pointerdown", e => {
-    if (e.target.closest(".vtt-token")) return;
-    const pt = canvasPoint(e);
-    if (currentTool === "measure") { measureStart = pt; drawMeasurement(pt, pt); }
-    if (currentTool === "ping") pingAt(pt);
-    if (currentTool === "reveal") editFog(pt, true);
-    if (currentTool === "hidefog") editFog(pt, false);
-    if (currentTool === "select") { selectedTokenId = null; renderVtt(); }
-  });
-  $("mapCanvas")?.addEventListener("pointermove", e => {
-    if (currentTool === "measure" && measureStart) drawMeasurement(measureStart, canvasPoint(e));
-  });
-  $("mapCanvas")?.addEventListener("pointerup", () => {
-    if (currentTool === "measure") setTimeout(clearMeasurement, 2500);
-    measureStart = null;
-  });
-
-  $("vttRollBtn")?.addEventListener("click", () => {
-    try {
-      const expr = $("vttDiceInput")?.value || "1d20";
-      const r = rollDice(expr);
-      vttState.diceLog.push({ expr, total: r.total, expanded: r.expanded });
-      vttState.diceLog = vttState.diceLog.slice(-50);
-      renderDiceLog();
-      saveVtt();
-    } catch (err) {
-      alert(err.message);
-    }
-  });
-  $("vttExportBtn")?.addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify(vttState, null, 2)], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `follyvtt-table-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  });
-  $("vttImportInput")?.addEventListener("change", async e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const imported = migrateVttState(JSON.parse(await file.text()));
-    if (!confirm("Import this VTT table and replace the current local table?")) return;
-    vttState = imported;
-    selectedTokenId = null;
-    renderVtt();
-  });
-
-  document.addEventListener("keydown", e => {
-    if (!$("page5")) return;
-    if (e.key === "Delete" && selectedTokenId) {
-      activeScene().tokens = activeScene().tokens.filter(t => t.id !== selectedTokenId);
-      selectedTokenId = null;
-      renderVtt();
-    }
-  });
+  document.getElementById("openVttBtn")?.addEventListener("click", () => { openModalById("vttModal"); renderVtt(); });
+  document.getElementById("loadSystemBtn")?.addEventListener("click", () => document.getElementById("systemJsonInput")?.click());
+  document.getElementById("systemJsonInput")?.addEventListener("change", async e => { const file=e.target.files[0]; if(!file) return; const json=JSON.parse(await file.text()); activeSystem={...activeSystem,...json,terms:{...activeSystem.terms,...(json.terms||{})},extraFields:json.extraFields||[]}; saveSystem(); applySystem(); });
+  document.getElementById("mapUpload")?.addEventListener("change", async e => { const file=e.target.files[0]; if(!file) return; const sc=activeScene(); sc.map=await readFileAsDataURL(file); sc.mapName=file.name; renderVtt(); });
+  document.getElementById("tokenUpload")?.addEventListener("change", async e => { for (const file of Array.from(e.target.files||[])) activeScene().tokens.push(normalizeToken({id:vttUid(),name:file.name.replace(/\.[^/.]+$/,""),img:await readFileAsDataURL(file),x:100,y:100})); e.target.value=""; renderVtt(); });
+  addBlankTokenBtn?.addEventListener("click", () => { const name=prompt("Token name?", "New Token"); if(!name) return; activeScene().tokens.push(normalizeToken({id:vttUid(),name,x:100,y:100})); renderVtt(); });
+  toggleGridBtn?.addEventListener("click", () => { activeScene().grid=!activeScene().grid; renderVtt(); });
+  toggleFogBtn?.addEventListener("click", () => { const sc=activeScene(); sc.fog=!sc.fog; renderVtt(); });
+  clearTokensBtn?.addEventListener("click", () => { if(confirm("Clear all tokens in this scene?")) { activeScene().tokens=[]; selectedTokenId=null; renderVtt(); }});
+  sortCombatBtn?.addEventListener("click", () => { sortCombatants(); renderVtt(); });
+  nextTurnBtn?.addEventListener("click", () => { if(vttState.combatants.length) vttState.turn=(vttState.turn+1)%vttState.combatants.length; renderVtt(); });
+  addCombatantBtn?.addEventListener("click", () => { const tok=selectedToken(); if(tok && confirm(`Add selected token "${tok.name}" to combat?`)) return addCombatantFromToken(tok); const name=prompt("Combatant name?"); if(!name) return; const initiative=Number(prompt("Initiative?","0"))||0; vttState.combatants.push({id:vttUid(),name,initiative,hp:"",ac:""}); sortCombatants(); renderVtt(); });
+  addSceneBtn?.addEventListener("click", () => { const input=sceneNameInput; const sc=defaultScene(input?.value?.trim() || `Scene ${vttState.scenes.length+1}`); vttState.scenes.push(sc); vttState.activeSceneId=sc.id; if(input) input.value=""; renderVtt(); });
+  vttNotes?.addEventListener("input", e => { activeScene().notes=e.target.value; saveVtt(); });
+  vttToolSelect?.addEventListener("change", e => { currentTool=e.target.value; });
+  vttZoom?.addEventListener("input", e => { activeScene().zoom=Number(e.target.value)/100; renderVtt(); });
+  vttGridSize?.addEventListener("change", e => { activeScene().gridSize=Math.max(20, Number(e.target.value)||50); renderVtt(); });
+  vttGridFeet?.addEventListener("change", e => { activeScene().gridFeet=Math.max(1, Number(e.target.value)||5); renderVtt(); });
+  vttSnap?.addEventListener("change", e => { activeScene().snap=e.target.checked; renderVtt(); });
+  vttCenterBtn?.addEventListener("click", () => { const vp=mapViewport; if(vp){ vp.scrollLeft=0; vp.scrollTop=0; }});
+  mapCanvas?.addEventListener("pointerdown", e => { if(e.target.closest(".vtt-token")) return; const pt=canvasPoint(e); if(currentTool==="measure"){measureStart=pt; drawMeasurement(pt,pt);} if(currentTool==="ping") pingAt(pt); if(currentTool==="reveal") editFog(pt,true); if(currentTool==="hidefog") editFog(pt,false); if(currentTool==="select"){selectedTokenId=null; renderVtt();} });
+  mapCanvas?.addEventListener("pointermove", e => { if(currentTool==="measure" && measureStart) drawMeasurement(measureStart, canvasPoint(e)); });
+  mapCanvas?.addEventListener("pointerup", () => { if(currentTool==="measure") setTimeout(clearMeasurement, 2500); measureStart=null; });
+  vttRollBtn?.addEventListener("click", () => { try { const expr=vttDiceInput?.value||"1d20"; const r=rollDice(expr); vttState.diceLog.push({expr,total:r.total,expanded:r.expanded}); vttState.diceLog=vttState.diceLog.slice(-50); renderDiceLog(); saveVtt(); } catch(err) { alert(err.message); }});
+  vttExportBtn?.addEventListener("click", () => { const blob=new Blob([JSON.stringify(vttState,null,2)],{type:"application/json"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`follyvtt-table-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); });
+  vttImportInput?.addEventListener("change", async e => { const file=e.target.files[0]; if(!file) return; const imported=migrateVttState(JSON.parse(await file.text())); if(!confirm("Import this VTT table and replace the current local table?")) return; vttState=imported; selectedTokenId=null; renderVtt(); });
+  document.addEventListener("keydown", e => { if(document.getElementById("vttModal")?.classList.contains("hidden")) return; if(e.key==="Delete" && selectedTokenId){ activeScene().tokens=activeScene().tokens.filter(t=>t.id!==selectedTokenId); selectedTokenId=null; renderVtt(); } if(e.key==="Escape") closeModalById("vttModal"); });
 }
-
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => { bindFollyVttEvents(); applySystem(); renderVtt(); });
 else { bindFollyVttEvents(); applySystem(); renderVtt(); }

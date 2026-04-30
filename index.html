@@ -28,7 +28,6 @@
       <button id="btn-pointbuy" class="action-btn" title="Point Buy Calculator">🧮 Point Buy</button>
       <button id="btn-rules" class="action-btn" title="SRD Rules Reference">📚 Rules</button>
       <button id="btn-monsters" class="action-btn" title="Monster Browser">🐉 Monsters</button>
-      <button id="openVttBtn" class="action-btn" title="Open the tabletop page">🗺️ Tabletop</button>
       <label class="action-btn" title="Load optional source data from local JSON files (not stored in repo). Multiple files may be selected at once.">
         📗 Load Sources
         <input type="file" id="source-files" accept=".json" multiple style="display:none" />
@@ -1064,121 +1063,6 @@
       <div class="section notes-section">
         <h3 class="section-title">Notes</h3>
         <textarea id="notes" data-key="notes" class="notes-textarea" placeholder="Free-form notes, session logs, reminders…"></textarea>
-      </div>
-    </section>
-
-
-    <!-- ============================================================ -->
-    <!-- PAGE 5: TABLETOP / VTT TOOLS                                 -->
-    <!-- ============================================================ -->
-    <section id="page5" class="page vtt-page" role="region" aria-label="Tabletop Tools">
-      <div class="section vtt-page-header">
-        <div>
-          <h2 class="section-title">🗺️ Tabletop</h2>
-          <p class="vtt-page-subtitle">Map, scenes, tokens, initiative, dice, and session notes. This page is separate from the character sheet.</p>
-        </div>
-        <div class="vtt-import-export">
-          <button type="button" id="vttExportBtn" class="action-btn">💾 Export Table</button>
-          <label class="action-btn">📂 Import Table
-            <input type="file" id="vttImportInput" accept=".json,application/json" style="display:none" />
-          </label>
-        </div>
-      </div>
-
-      <div class="vtt-toolbar section">
-        <label class="action-btn">🖼️ Load Map
-          <input type="file" id="mapUpload" accept="image/*" style="display:none" />
-        </label>
-        <label class="action-btn">🧍 Add Token Image(s)
-          <input type="file" id="tokenUpload" accept="image/*" multiple style="display:none" />
-        </label>
-        <button type="button" id="addBlankTokenBtn" class="action-btn">➕ Blank Token</button>
-        <button type="button" id="toggleGridBtn" class="action-btn">#️⃣ Grid</button>
-        <button type="button" id="toggleFogBtn" class="action-btn">🌫️ Fog</button>
-        <button type="button" id="clearTokensBtn" class="action-btn">🧹 Clear Tokens</button>
-        <label class="vtt-tool-label">Tool
-          <select id="vttToolSelect">
-            <option value="select">Select / Move</option>
-            <option value="measure">Measure</option>
-            <option value="ping">Ping</option>
-            <option value="reveal">Reveal Fog</option>
-            <option value="hidefog">Hide Fog</option>
-          </select>
-        </label>
-        <label class="vtt-tool-label">Zoom
-          <input id="vttZoom" type="range" min="25" max="200" value="100" />
-        </label>
-        <label class="vtt-tool-label">Grid px
-          <input id="vttGridSize" type="number" min="20" value="50" />
-        </label>
-        <label class="vtt-tool-label">Grid ft
-          <input id="vttGridFeet" type="number" min="1" value="5" />
-        </label>
-        <label class="inline-check-label vtt-snap-label">
-          <input id="vttSnap" type="checkbox" checked />
-          <span class="check-mark small"></span> Snap
-        </label>
-        <button type="button" id="vttCenterBtn" class="action-btn">🎯 Top Left</button>
-      </div>
-
-      <div class="vtt-layout vtt-page-layout">
-        <div class="section vtt-map-section">
-          <div id="mapViewport" class="vtt-map-viewport">
-            <div id="mapCanvas" class="vtt-map-canvas">
-              <div id="mapPlaceholder" class="vtt-map-placeholder">Load a map image to begin.</div>
-              <img id="mapImage" alt="Battle map" draggable="false" />
-              <div id="gridLayer"></div>
-              <div id="fogLayer" class="hidden"></div>
-              <div id="tokenLayer"></div>
-              <svg id="measureLayer"></svg>
-              <div id="pingLayer"></div>
-            </div>
-          </div>
-        </div>
-
-        <aside class="vtt-sidebars">
-          <div class="section combat-panel">
-            <div class="section-title-row">
-              <h3 class="section-title">⚔️ Initiative</h3>
-              <div class="vtt-mini-actions">
-                <button type="button" id="addCombatantBtn" class="action-btn">Add</button>
-                <button type="button" id="sortCombatBtn" class="action-btn">Sort</button>
-                <button type="button" id="nextTurnBtn" class="action-btn">Next</button>
-              </div>
-            </div>
-            <div id="combatList" class="combat-list"></div>
-          </div>
-
-          <div class="section">
-            <h3 class="section-title">🧍 Token Inspector</h3>
-            <div id="tokenInspector" class="token-inspector empty">Select a token.</div>
-          </div>
-
-          <div class="section">
-            <div class="section-title-row">
-              <h3 class="section-title">🎬 Scenes</h3>
-              <div class="vtt-scene-add">
-                <input id="sceneNameInput" type="text" placeholder="Scene name" />
-                <button type="button" id="addSceneBtn" class="action-btn">Add</button>
-              </div>
-            </div>
-            <div id="sceneList" class="scene-list"></div>
-          </div>
-
-          <div class="section">
-            <h3 class="section-title">🎲 Table Dice</h3>
-            <div class="vtt-dice-row">
-              <input id="vttDiceInput" type="text" value="1d20" placeholder="1d20+5" />
-              <button type="button" id="vttRollBtn" class="action-btn">Roll</button>
-            </div>
-            <div id="vttDiceLog" class="vtt-dice-log"></div>
-          </div>
-
-          <div class="section">
-            <h3 class="section-title">📝 Scene Notes</h3>
-            <textarea id="vttNotes" rows="7" placeholder="Room notes, reminders, encounter text…"></textarea>
-          </div>
-        </aside>
       </div>
     </section>
 
