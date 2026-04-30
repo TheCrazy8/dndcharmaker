@@ -101,7 +101,7 @@ async function connectGoogleDrive() {
 function getDriveToken() {
   return gDriveAccessToken;
 }
-let _extraSources = []; // [{ name, spells, feats, subclasses, monsters, fields, html, abilities }, …]
+let _extraSources = []; // [{ name, spells, feats, subclasses, monsters }, …]
 
 function getSourceLibrary() {
   try { return JSON.parse(localStorage.getItem(SOURCE_LIBRARY_KEY)) || []; }
@@ -123,16 +123,10 @@ function restoreLoadedSources() {
     feats: src.feats || [],
     subclasses: src.subclasses || {},
     monsters: src.monsters || [],
-    fields: src.fields || [],
-    html: src.html || [],
-    css: src.css || [],
-    conditions: src.conditions || [],
-    abilities: src.abilities || src.abilityScores || [],
     driveFileId: src.driveFileId || null,
     syncedAt: src.syncedAt || null,
   }));
   updateSourceFilters();
-  renderSourceExtensions();
 }
 
 /** Returns all spells (SRD + any loaded sources), each tagged with a .src field. */
@@ -210,60 +204,6 @@ function validateSourceData(data) {
       if (typeof m.name !== 'string') throw new Error(`monsters[${i}].name must be a string.`);
     });
   }
-  if (data.fields !== undefined) {
-    if (!Array.isArray(data.fields)) throw new Error('"fields" must be an array.');
-    data.fields.forEach((f, i) => {
-      if (typeof f.key !== 'string' || !f.key.trim()) throw new Error(`fields[${i}].key must be a non-empty string.`);
-      if (typeof f.label !== 'string' || !f.label.trim()) throw new Error(`fields[${i}].label must be a non-empty string.`);
-    });
-  }
-  if (data.html !== undefined && typeof data.html !== 'string' && !Array.isArray(data.html)) throw new Error('"html" must be a string or an array.');
-  const abilityList = data.abilities || data.abilityScores;
-  if (abilityList !== undefined) {
-    if (!Array.isArray(abilityList)) throw new Error('"abilities" / "abilityScores" must be an array.');
-    abilityList.forEach((ab, i) => {
-      if (typeof ab.id !== 'string' || !ab.id.trim()) throw new Error(`abilities[${i}].id must be a non-empty string.`);
-      if (typeof ab.name !== 'string' || !ab.name.trim()) throw new Error(`abilities[${i}].name must be a non-empty string.`);
-    });
-  }
-  if (data.css !== undefined && typeof data.css !== 'string' && !Array.isArray(data.css)) {
-    throw new Error('"css" must be a string or an array of strings.');
-  }
-
-  if (Array.isArray(data.css)) {
-    data.css.forEach((block, i) => {
-      if (typeof block !== 'string') throw new Error(`css[${i}] must be a string.`);
-    });
-  }
-
-  if (data.html !== undefined && typeof data.html !== 'string' && !Array.isArray(data.html)) {
-    throw new Error('"html" must be a string or an array.');
-  }
-  if (data.conditions !== undefined) {
-  if (!Array.isArray(data.conditions)) throw new Error('"conditions" must be an array.');
-
-  data.conditions.forEach((c, i) => {
-    if (typeof c.name !== 'string' || !c.name.trim()) {
-      throw new Error(`conditions[${i}].name must be a non-empty string.`);
-    }
-
-    if (c.desc !== undefined && typeof c.desc !== 'string') {
-      throw new Error(`conditions[${i}].desc must be a string.`);
-    }
-
-    if (c.description !== undefined && typeof c.description !== 'string') {
-      throw new Error(`conditions[${i}].description must be a string.`);
-    }
-
-    if (c.effects !== undefined && !Array.isArray(c.effects)) {
-      throw new Error(`conditions[${i}].effects must be an array.`);
-    }
-
-    if (c.tags !== undefined && !Array.isArray(c.tags)) {
-      throw new Error(`conditions[${i}].tags must be an array.`);
-    }
-  });
-}
 }
 
 /** Derives a source name from a filename (strips extension, uppercases). */
@@ -321,11 +261,6 @@ function loadSourceFiles(files) {
           feats:      data.feats      || [],
           subclasses: data.subclasses || {},
           monsters:   data.monsters   || [],
-          fields:     data.fields     || [],
-          html:       data.html       || [],
-          css:        data.css        || [],
-          conditions: src.conditions || [],
-          abilities:  data.abilities || data.abilityScores || [],
         };
         if (existing >= 0) {
           _extraSources[existing] = entry;
@@ -346,13 +281,10 @@ function loadSourceFiles(files) {
   function finalize() {
     persistLoadedSources();
     updateSourceFilters();
-    renderSourceExtensions();
     renderSourceManagerList();
     const summary = _extraSources.map(s =>
-      ` ${s.name}: ${s.spells.length} spells, ${s.feats.length} feats, ` +
-      `${Object.keys(s.subclasses).length} subclass groups, ${s.monsters.length} monsters, ` +
-      `${(s.fields || []).length} fields, ${normalizeHtmlPatches(s.html).length} HTML patches, ` +
-      `${normalizeCssBlocks(s.css).length} CSS blocks, ${(s.abilities || []).length} abilities`
+      `  ${s.name}: ${s.spells.length} spells, ${s.feats.length} feats, ` +
+      `${Object.keys(s.subclasses).length} subclass groups, ${s.monsters.length} monsters`
     ).join('\n');
     let msg = '';
     if (loaded > 0) {
@@ -642,8 +574,6 @@ function recalcAll() {
 
   // Inventory weight
   calcInventory();
-
-  recalcSourceAbilities();
 }
 
 /* ============================================================
@@ -779,7 +709,6 @@ function loadFromStorage() {
 }
 
 function applyData(data) {
-  renderSourceExtensions();
   document.querySelectorAll('[data-key]').forEach(el => {
     const key = el.dataset.key;
     if (!(key in data)) return;
@@ -1635,7 +1564,7 @@ async function syncLoadedSourcesToDrive() {
   if (_extraSources.length === 0) { alert('No loaded sources to sync. Load a source JSON first.'); return; }
   try {
     for (const src of _extraSources) {
-      const payload = { kind: 'dnd5e-source', source: src.name, syncedAt: nowStamp(), spells: src.spells || [], feats: src.feats || [], subclasses: src.subclasses || {}, monsters: src.monsters || [], fields: src.fields || [], html: src.html || [], abilities: src.abilities || [] };
+      const payload = { kind: 'dnd5e-source', source: src.name, syncedAt: nowStamp(), spells: src.spells || [], feats: src.feats || [], subclasses: src.subclasses || {}, monsters: src.monsters || [] };
       const saved = src.driveFileId ? await updateDriveJsonFile(src.driveFileId, payload) : await createDriveJsonFile(`${GDRIVE_SOURCE_PREFIX}${safeFilePart(src.name)}.json`, payload);
       src.driveFileId = saved.id || src.driveFileId;
       src.syncedAt = saved.modifiedTime || nowStamp();
@@ -1651,12 +1580,11 @@ async function loadDriveSource(fileId) {
     const payload = await readDriveJson(fileId);
     validateSourceData(payload);
     const name = (payload.source || payload.name || 'Drive Source').trim();
-    const entry = { name, spells: payload.spells || [], feats: payload.feats || [], subclasses: payload.subclasses || {}, monsters: payload.monsters || [], fields: payload.fields || [], html: payload.html || [], abilities: payload.abilities || payload.abilityScores || [], driveFileId: fileId, syncedAt: payload.syncedAt || nowStamp() };
+    const entry = { name, spells: payload.spells || [], feats: payload.feats || [], subclasses: payload.subclasses || {}, monsters: payload.monsters || [], driveFileId: fileId, syncedAt: payload.syncedAt || nowStamp() };
     const existing = _extraSources.findIndex(s => s.name === name);
     if (existing >= 0) _extraSources[existing] = entry; else _extraSources.push(entry);
     persistLoadedSources();
     updateSourceFilters();
-    renderSourceExtensions();
     renderSourceManagerList();
     alert(`Loaded source "${name}" from Google Drive.`);
   } catch (err) { alert(err.message || String(err)); }
@@ -1689,7 +1617,7 @@ function renderSourceManagerList() {
     div.innerHTML = `
       <div class="char-mgr-info">
         <span class="char-mgr-name">${escapeHtml(src.name)}</span>
-        <span class="char-mgr-meta">${src.spells.length} spells · ${src.feats.length} feats · ${Object.keys(src.subclasses || {}).length} subclass groups · ${(src.monsters || []).length} monsters · ${(src.fields || []).length} fields · ${normalizeSourceHtmlBlocks(src.html).length} HTML · ${(src.abilities || []).length} abilities</span>
+        <span class="char-mgr-meta">${src.spells.length} spells · ${src.feats.length} feats · ${Object.keys(src.subclasses || {}).length} subclass groups · ${(src.monsters || []).length} monsters</span>
         <span class="char-mgr-date">${src.driveFileId ? 'Drive synced' : 'Local only'}${src.syncedAt ? ' · ' + friendlyDate(src.syncedAt) : ''}</span>
       </div>
       <div class="char-mgr-entry-actions"><button class="char-mgr-btn delete" onclick="removeSource(${index})">🗑️ Remove</button></div>`;
@@ -1707,138 +1635,6 @@ function removeSource(index) {
   if (document.getElementById('spell-browser-overlay') && !document.getElementById('spell-browser-overlay').classList.contains('hidden')) filterSpells();
   if (document.getElementById('feat-browser-overlay') && !document.getElementById('feat-browser-overlay').classList.contains('hidden')) filterFeats();
   if (document.getElementById('monster-browser-overlay') && !document.getElementById('monster-browser-overlay').classList.contains('hidden')) filterMonsters();
-}
-
-
-/* ============================================================
-   SOURCE-DEFINED SHEET EXTENSIONS
-   Sources can add custom fields, display HTML, and extra ability scores.
-   ============================================================ */
-const DEFAULT_ABILITY_DEFS = [
-  { id: 'str', abbr: 'STR', name: 'Strength' },
-  { id: 'dex', abbr: 'DEX', name: 'Dexterity' },
-  { id: 'con', abbr: 'CON', name: 'Constitution' },
-  { id: 'int', abbr: 'INT', name: 'Intelligence' },
-  { id: 'wis', abbr: 'WIS', name: 'Wisdom' },
-  { id: 'cha', abbr: 'CHA', name: 'Charisma' },
-];
-function normalizeSourceHtmlBlocks(value) {
-  if (!value) return [];
-  if (typeof value === 'string') return [{ title: 'Source HTML', html: value }];
-  if (!Array.isArray(value)) return [];
-  return value.map((block, i) => typeof block === 'string' ? { title: `HTML Block ${i + 1}`, html: block } : { title: block.title || `HTML Block ${i + 1}`, html: block.html || '' });
-}
-function normalizeSourceField(field, sourceName, i) {
-  const rawKey = String(field.key || `${sourceName}-field-${i}`).trim().replace(/[^a-zA-Z0-9_-]/g, '');
-  return { key: `src.${sourceName}.${rawKey}`, label: field.label || rawKey, type: field.type || 'text', placeholder: field.placeholder || '', defaultValue: field.default ?? '', options: Array.isArray(field.options) ? field.options : [] };
-}
-function getSourceAbilityDefs() {
-  const seen = new Set(DEFAULT_ABILITY_DEFS.map(a => a.id));
-  const defs = [];
-  _extraSources.forEach(src => (src.abilities || src.abilityScores || []).forEach(raw => {
-    const id = String(raw.id || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
-    if (!id || seen.has(id)) return;
-    seen.add(id);
-    defs.push({ id, abbr: (raw.abbr || raw.short || id).toUpperCase(), name: raw.name || raw.label || id, source: src.name, min: Number(raw.min ?? 1), max: Number(raw.max ?? 99), default: Number(raw.default ?? raw.score ?? 10), skills: Array.isArray(raw.skills) ? raw.skills : [] });
-  }));
-  return defs;
-}
-function renderSourceExtensions() {
-  const leftCol = document.querySelector('.left-col') || document.querySelector('.sheet-container');
-  if (!leftCol) return;
-  let host = document.getElementById('source-sheet-extensions');
-  if (!host) {
-    host = document.createElement('div');
-    host.id = 'source-sheet-extensions';
-    host.className = 'source-sheet-extensions';
-    const abilities = document.querySelector('.abilities-section');
-    if (abilities && abilities.parentElement) abilities.insertAdjacentElement('afterend', host); else leftCol.appendChild(host);
-  }
-  const abilityDefs = getSourceAbilityDefs();
-  const fieldBlocks = _extraSources.flatMap(src => (src.fields || []).map((f, i) => ({ src: src.name, field: normalizeSourceField(f, src.name, i) })));
-  const htmlBlocks = _extraSources.flatMap(src => normalizeSourceHtmlBlocks(src.html).map(block => ({ src: src.name, ...block })));
-  let out = '';
-  if (abilityDefs.length) {
-    out += `<div class="section source-abilities-section"><h3 class="section-title">Source Ability Scores</h3>`;
-    abilityDefs.forEach(ab => {
-      const scoreKey = `${ab.id}Score`, saveKey = `${ab.id}SaveProf`;
-      out += `<div class="ability-block source-ability-block" id="ability-${escapeHtml(ab.id)}"><div class="ability-header"><span class="ability-name">${escapeHtml(ab.abbr)}</span><span class="ability-full">${escapeHtml(ab.name)} · ${escapeHtml(ab.source)}</span></div><div class="ability-body"><div class="score-mod-row"><div class="score-col"><label>Score</label><input type="number" class="ability-score source-ability-score" data-ability="${escapeHtml(ab.id)}" data-key="${escapeHtml(scoreKey)}" value="${escapeHtml(String(ab.default))}" min="${escapeHtml(String(ab.min))}" max="${escapeHtml(String(ab.max))}" /></div><div class="mod-col"><label>Mod</label><div class="mod-display" id="${escapeHtml(ab.id)}-mod">+0</div></div><div class="save-col"><label>Save</label><div class="save-row"><label class="checkbox-label"><input type="checkbox" data-key="${escapeHtml(saveKey)}" class="save-prof" data-ability="${escapeHtml(ab.id)}" /><span class="check-mark"></span></label><span class="save-mod" id="${escapeHtml(ab.id)}-save">+0</span></div></div></div>`;
-      if (ab.skills.length) {
-        out += '<div class="skills-list">';
-        ab.skills.forEach((sk, i) => {
-          const skKey = String(sk.key || sk.name || `${ab.id}Skill${i}`).replace(/[^a-zA-Z0-9_-]/g, '');
-          const label = sk.name || sk.label || skKey;
-          out += `<div class="skill-row"><label class="checkbox-label"><input type="checkbox" data-key="${escapeHtml(skKey)}" data-ability="${escapeHtml(ab.id)}" class="skill-prof source-skill-prof" /><span class="check-mark small"></span></label><span class="skill-mod" id="mod-${escapeHtml(skKey.toLowerCase())}">+0</span><span class="skill-name">${escapeHtml(label)}</span></div>`;
-        });
-        out += '</div>';
-      }
-      out += '</div></div>';
-    });
-    out += '</div>';
-  }
-  if (fieldBlocks.length) {
-    out += '<div class="section source-fields-section"><h3 class="section-title">Source Fields</h3><div class="source-fields-grid">';
-    fieldBlocks.forEach(({ src, field }) => {
-      out += `<div class="field-group source-field"><label>${escapeHtml(field.label)} (${escapeHtml(src)})</label>`;
-      if (field.type === 'textarea') out += `<textarea data-key="${escapeHtml(field.key)}" placeholder="${escapeHtml(field.placeholder)}">${escapeHtml(String(field.defaultValue))}</textarea>`;
-      else if (field.type === 'select') { out += `<select data-key="${escapeHtml(field.key)}"><option value="">—</option>`; field.options.forEach(opt => { const val = typeof opt === 'object' ? (opt.value ?? opt.label) : opt; const txt = typeof opt === 'object' ? (opt.label ?? opt.value) : opt; out += `<option value="${escapeHtml(String(val))}">${escapeHtml(String(txt))}</option>`; }); out += '</select>'; }
-      else if (field.type === 'checkbox') out += `<label class="inline-check-label"><input type="checkbox" data-key="${escapeHtml(field.key)}" /> Enabled</label>`;
-      else out += `<input type="${['number','date','text'].includes(field.type) ? field.type : 'text'}" data-key="${escapeHtml(field.key)}" placeholder="${escapeHtml(field.placeholder)}" value="${escapeHtml(String(field.defaultValue))}" />`;
-      out += '</div>';
-    });
-    out += '</div></div>';
-  }
-  if (htmlBlocks.length) {
-    out += '<div class="section source-html-section"><h3 class="section-title">Source HTML</h3>';
-    htmlBlocks.forEach(block => { out += `<article class="source-html-block"><h4>${escapeHtml(block.title)} <span>${escapeHtml(block.src)}</span></h4><div class="source-html-content">${sanitizeSourceHtml(block.html)}</div></article>`; });
-    out += '</div>';
-  }
-  host.innerHTML = out;
-  updateSpellAbilityOptions();
-  recalcSourceAbilities();
-}
-function sanitizeSourceHtml(raw) {
-  const tpl = document.createElement('template');
-  tpl.innerHTML = String(raw || '');
-  tpl.content.querySelectorAll('script, iframe, object, embed, link, meta').forEach(el => el.remove());
-  tpl.content.querySelectorAll('*').forEach(el => [...el.attributes].forEach(attr => { if (/^on/i.test(attr.name) || String(attr.value).trim().toLowerCase().startsWith('javascript:')) el.removeAttribute(attr.name); }));
-  return tpl.innerHTML;
-}
-function updateSpellAbilityOptions() {
-  const sel = document.getElementById('spell-ability');
-  if (!sel) return;
-  const current = sel.value;
-  sel.querySelectorAll('option[data-source-ability="true"]').forEach(o => o.remove());
-  getSourceAbilityDefs().forEach(ab => { const opt = document.createElement('option'); opt.value = ab.id; opt.dataset.sourceAbility = 'true'; opt.textContent = ab.name; sel.appendChild(opt); });
-  if ([...sel.options].some(o => o.value === current)) sel.value = current;
-}
-function recalcSourceAbilities() {
-  const pb = profBonus(Number(document.getElementById('level')?.value) || 1);
-  const sourceMods = {};
-  getSourceAbilityDefs().forEach(ab => {
-    const mod = abilityMod(getScore(ab.id));
-    sourceMods[ab.id] = mod;
-    const modEl = document.getElementById(`${ab.id}-mod`); if (modEl) modEl.textContent = formatMod(mod);
-    const saveEl = document.getElementById(`${ab.id}-save`); if (saveEl) saveEl.textContent = formatMod(mod + (isChecked(`${ab.id}SaveProf`) ? pb : 0));
-    (ab.skills || []).forEach((sk, i) => {
-      const skKey = String(sk.key || sk.name || `${ab.id}Skill${i}`).replace(/[^a-zA-Z0-9_-]/g, '');
-      const checkbox = document.querySelector(`[data-key="${skKey}"]`);
-      const val = mod + (checkbox?.dataset.expertise === 'true' ? 2 * pb : checkbox?.checked ? pb : 0);
-      const out = document.getElementById(`mod-${skKey.toLowerCase()}`); if (out) out.textContent = formatMod(val);
-    });
-  });
-
-  const spellAbility = document.getElementById('spell-ability')?.value;
-  if (spellAbility && sourceMods[spellAbility] !== undefined) {
-    const pbNow = profBonus(Number(document.getElementById('level')?.value) || 1);
-    const sm = sourceMods[spellAbility];
-    const spellModEl = document.getElementById('spell-mod');
-    const spellDCEl  = document.getElementById('spell-dc');
-    const spellAtkEl = document.getElementById('spell-atk');
-    if (spellModEl) spellModEl.textContent = formatMod(sm);
-    if (spellDCEl)  spellDCEl.textContent  = 8 + pbNow + sm;
-    if (spellAtkEl) spellAtkEl.textContent = formatMod(pbNow + sm);
-  }
 }
 
 /* ============================================================
@@ -2664,402 +2460,205 @@ function escSrd(str) {
 }
 
 /* ============================================================
-   FollyVTT Addon — maps, tokens, combat, modular systems
+   FollyVTT Addon — enhanced local VTT layer
    ============================================================ */
-
-const VTT_KEY = "follyvtt_state";
+const VTT_KEY = "follyvtt_state_v2";
 const SYSTEM_KEY = "follyvtt_system";
+const LEGACY_VTT_KEY = "follyvtt_state";
+const vttUid = () => (crypto?.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
-const vttState = JSON.parse(localStorage.getItem(VTT_KEY) || `{
-  "map": "",
-  "tokens": [],
-  "grid": true,
-  "combatants": [],
-  "turn": 0
-}`);
-
-let activeSystem = JSON.parse(localStorage.getItem(SYSTEM_KEY) || `{
-  "name": "D&D 5e Default",
-  "abilities": ["STR", "DEX", "CON", "INT", "WIS", "CHA"],
-  "terms": {
-    "species": "Species",
-    "class": "Class",
-    "armorClass": "Armor Class"
-  },
-  "extraFields": []
-}`);
-
-function saveVtt() {
-  localStorage.setItem(VTT_KEY, JSON.stringify(vttState));
+function defaultScene(name = "Scene 1") {
+  return { id: vttUid(), name, map: "", mapName: "", tokens: [], grid: true, fog: false, fogReveals: [], gridSize: 50, gridFeet: 5, snap: true, zoom: 1, notes: "" };
 }
-
-function saveSystem() {
-  localStorage.setItem(SYSTEM_KEY, JSON.stringify(activeSystem));
-}
-
-function openModalById(id) {
-  document.getElementById(id)?.classList.remove("hidden");
-}
-
-function closeModalById(id) {
-  document.getElementById(id)?.classList.add("hidden");
-}
-
-document.querySelectorAll("[data-close]").forEach(btn => {
-  btn.addEventListener("click", () => closeModalById(btn.dataset.close));
-});
-
-document.getElementById("openVttBtn")?.addEventListener("click", () => {
-  openModalById("vttModal");
-  renderVtt();
-});
-
-document.getElementById("loadSystemBtn")?.addEventListener("click", () => {
-  document.getElementById("systemJsonInput").click();
-});
-
-document.getElementById("systemJsonInput")?.addEventListener("change", async e => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const json = JSON.parse(await file.text());
-  activeSystem = {
-    ...activeSystem,
-    ...json,
-    terms: { ...activeSystem.terms, ...(json.terms || {}) },
-    extraFields: json.extraFields || []
-  };
-
-  saveSystem();
-  applySystem();
-});
-
-function applySystem() {
-  const modularRoot = document.getElementById("modularSheetFields");
-  if (!modularRoot) return;
-
-  modularRoot.innerHTML = "";
-
-  for (const field of activeSystem.extraFields || []) {
-    const wrap = document.createElement("label");
-    wrap.className = "system-field";
-
-    const label = document.createElement("span");
-    label.textContent = field.label || field.id;
-
-    let input;
-
-    if (field.type === "textarea") {
-      input = document.createElement("textarea");
-    } else if (field.type === "select") {
-      input = document.createElement("select");
-      for (const option of field.options || []) {
-        const opt = document.createElement("option");
-        opt.value = option;
-        opt.textContent = option;
-        input.appendChild(opt);
-      }
-    } else {
-      input = document.createElement("input");
-      input.type = field.type || "text";
-    }
-
-    input.dataset.systemField = field.id;
-    input.placeholder = field.placeholder || "";
-
-    wrap.append(label, input);
-    modularRoot.appendChild(wrap);
+function defaultVttState() { return { version: 2, activeSceneId: "", scenes: [], combatants: [], turn: 0, diceLog: [] }; }
+function migrateVttState(raw) {
+  const state = defaultVttState();
+  if (!raw || typeof raw !== "object") { const sc = defaultScene(); state.scenes = [sc]; state.activeSceneId = sc.id; return state; }
+  if (Array.isArray(raw.scenes)) {
+    state.scenes = raw.scenes.length ? raw.scenes.map(sc => ({ ...defaultScene(sc.name || "Scene"), ...sc })) : [defaultScene()];
+    state.activeSceneId = raw.activeSceneId || state.scenes[0].id;
+    state.combatants = Array.isArray(raw.combatants) ? raw.combatants : [];
+    state.turn = Number(raw.turn) || 0;
+    state.diceLog = Array.isArray(raw.diceLog) ? raw.diceLog.slice(-50) : [];
+    return state;
   }
+  const legacy = defaultScene("Imported Scene");
+  legacy.map = raw.map || ""; legacy.tokens = Array.isArray(raw.tokens) ? raw.tokens : []; legacy.grid = raw.grid !== false;
+  state.scenes = [legacy]; state.activeSceneId = legacy.id; state.combatants = Array.isArray(raw.combatants) ? raw.combatants : []; state.turn = Number(raw.turn) || 0;
+  return state;
 }
+let vttState = (() => { try { return migrateVttState(JSON.parse(localStorage.getItem(VTT_KEY) || localStorage.getItem(LEGACY_VTT_KEY) || "null")); } catch { return migrateVttState(null); }})();
+let activeSystem = JSON.parse(localStorage.getItem(SYSTEM_KEY) || `{"name":"D&D 5e Default","abilities":["STR","DEX","CON","INT","WIS","CHA"],"terms":{"species":"Species","class":"Class","armorClass":"Armor Class"},"extraFields":[]}`);
+let selectedTokenId = null;
+let currentTool = "select";
+let measureStart = null;
 
-document.getElementById("mapUpload")?.addEventListener("change", e => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    vttState.map = reader.result;
-    saveVtt();
-    renderVtt();
-  };
-  reader.readAsDataURL(file);
-});
-
-document.getElementById("tokenUpload")?.addEventListener("change", e => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    vttState.tokens.push({
-      id: crypto.randomUUID(),
-      name: file.name.replace(/\.[^/.]+$/, ""),
-      img: reader.result,
-      x: 100,
-      y: 100,
-      size: 50
-    });
-
-    saveVtt();
-    renderVtt();
-  };
-  reader.readAsDataURL(file);
-});
-
-document.getElementById("toggleGridBtn")?.addEventListener("click", () => {
-  vttState.grid = !vttState.grid;
-  saveVtt();
-  renderVtt();
-});
-
-document.getElementById("clearTokensBtn")?.addEventListener("click", () => {
-  vttState.tokens = [];
-  saveVtt();
-  renderVtt();
-});
+function activeScene() {
+  if (!vttState.scenes.length) { const sc = defaultScene(); vttState.scenes.push(sc); vttState.activeSceneId = sc.id; }
+  return vttState.scenes.find(sc => sc.id === vttState.activeSceneId) || vttState.scenes[0];
+}
+function saveVtt() { localStorage.setItem(VTT_KEY, JSON.stringify(vttState)); }
+function saveSystem() { localStorage.setItem(SYSTEM_KEY, JSON.stringify(activeSystem)); }
+function openModalById(id) { const m = document.getElementById(id); if (m) { m.classList.remove("hidden"); m.setAttribute("aria-hidden", "false"); } }
+function closeModalById(id) { const m = document.getElementById(id); if (m) { m.classList.add("hidden"); m.setAttribute("aria-hidden", "true"); } }
+function vttEsc(str) { return String(str ?? "").replace(/[&<>"']/g, ch => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[ch])); }
+function readFileAsDataURL(file) { return new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file); }); }
+function normalizeToken(t) {
+  return { id: t.id || vttUid(), name: t.name || "Token", img: t.img || "", x: Number(t.x) || 100, y: Number(t.y) || 100, size: Number(t.size) || activeScene().gridSize || 50, hp: t.hp ?? "", maxHp: t.maxHp ?? "", ac: t.ac ?? "", hidden: Boolean(t.hidden), conditions: Array.isArray(t.conditions) ? t.conditions : [], notes: t.notes || "", color: t.color || "#ff004f" };
+}
+function canvasPoint(evt) {
+  const rect = document.getElementById("mapCanvas").getBoundingClientRect();
+  const z = activeScene().zoom || 1;
+  return { x: (evt.clientX - rect.left) / z, y: (evt.clientY - rect.top) / z };
+}
+function snapVal(v) { const sc = activeScene(); return sc.snap ? Math.round(v / sc.gridSize) * sc.gridSize : Math.round(v); }
 
 function renderVtt() {
-  const mapImage = document.getElementById("mapImage");
-  const gridLayer = document.getElementById("gridLayer");
-  const tokenLayer = document.getElementById("tokenLayer");
-
-  if (!mapImage || !gridLayer || !tokenLayer) return;
-
-  mapImage.src = vttState.map || "";
-  gridLayer.classList.toggle("hidden", !vttState.grid);
-
+  const sc = activeScene();
+  sc.tokens = (sc.tokens || []).map(normalizeToken);
+  const mapImage = document.getElementById("mapImage"), gridLayer = document.getElementById("gridLayer"), fogLayer = document.getElementById("fogLayer"), tokenLayer = document.getElementById("tokenLayer"), canvas = document.getElementById("mapCanvas");
+  if (!mapImage || !gridLayer || !fogLayer || !tokenLayer || !canvas) return;
+  mapImage.src = sc.map || ""; mapImage.style.display = sc.map ? "block" : "none";
+  canvas.style.transform = `scale(${sc.zoom || 1})`;
+  gridLayer.classList.toggle("hidden", !sc.grid); gridLayer.style.backgroundSize = `${sc.gridSize}px ${sc.gridSize}px`;
+  fogLayer.classList.toggle("hidden", !sc.fog);
+  fogLayer.innerHTML = (sc.fogReveals || []).map(r => `<span style="left:${r.x}px;top:${r.y}px;width:${r.r}px;height:${r.r}px"></span>`).join("");
+  const notes = document.getElementById("vttNotes"); if (notes) notes.value = sc.notes || "";
+  const zoom = document.getElementById("vttZoom"); if (zoom) zoom.value = Math.round((sc.zoom || 1) * 100);
+  const gs = document.getElementById("vttGridSize"); if (gs) gs.value = sc.gridSize;
+  const gf = document.getElementById("vttGridFeet"); if (gf) gf.value = sc.gridFeet;
+  const snap = document.getElementById("vttSnap"); if (snap) snap.checked = sc.snap !== false;
+  const tool = document.getElementById("vttToolSelect"); if (tool) tool.value = currentTool;
   tokenLayer.innerHTML = "";
-
-  for (const token of vttState.tokens) {
-    const img = document.createElement("img");
-    img.className = "vtt-token";
-    img.src = token.img;
-    img.title = token.name;
-    img.style.left = `${token.x}px`;
-    img.style.top = `${token.y}px`;
-    img.style.width = `${token.size}px`;
-    img.style.height = `${token.size}px`;
-
-    makeTokenDraggable(img, token);
-    tokenLayer.appendChild(img);
-  }
-
-  renderCombat();
+  sc.tokens.forEach(t => tokenLayer.appendChild(tokenElement(t)));
+  renderScenes(); renderCombat(); renderTokenInspector(); renderDiceLog(); saveVtt();
 }
-
+function tokenElement(token) {
+  const el = document.createElement(token.img ? "img" : "div");
+  el.className = "vtt-token"; el.dataset.tokenId = token.id; el.title = token.name;
+  if (token.img) el.src = token.img; else el.textContent = token.name.slice(0, 2).toUpperCase();
+  el.style.left = `${token.x}px`; el.style.top = `${token.y}px`; el.style.width = `${token.size}px`; el.style.height = `${token.size}px`; el.style.borderColor = token.color;
+  el.classList.toggle("selected", token.id === selectedTokenId); el.classList.toggle("token-hidden", token.hidden);
+  if (token.conditions.length) { const badge = document.createElement("span"); badge.className = "token-badge"; badge.textContent = token.conditions.length; el.appendChild(badge); }
+  makeTokenDraggable(el, token); return el;
+}
 function makeTokenDraggable(el, token) {
-  let dragging = false;
-  let offsetX = 0;
-  let offsetY = 0;
-
-  el.addEventListener("pointerdown", e => {
-    dragging = true;
-    el.setPointerCapture(e.pointerId);
-    offsetX = e.offsetX;
-    offsetY = e.offsetY;
-    el.classList.add("selected");
-  });
-
-  el.addEventListener("pointermove", e => {
-    if (!dragging) return;
-
-    const parentRect = el.parentElement.getBoundingClientRect();
-    token.x = Math.round((e.clientX - parentRect.left - offsetX) / 50) * 50;
-    token.y = Math.round((e.clientY - parentRect.top - offsetY) / 50) * 50;
-
-    el.style.left = `${token.x}px`;
-    el.style.top = `${token.y}px`;
-  });
-
-  el.addEventListener("pointerup", () => {
-    dragging = false;
-    el.classList.remove("selected");
-    saveVtt();
-  });
+  let drag = false, ox = 0, oy = 0;
+  el.addEventListener("pointerdown", e => { if (currentTool !== "select") return; e.preventDefault(); drag = true; selectedTokenId = token.id; el.setPointerCapture(e.pointerId); ox = e.offsetX / (activeScene().zoom || 1); oy = e.offsetY / (activeScene().zoom || 1); renderVtt(); });
+  el.addEventListener("pointermove", e => { if (!drag) return; const pt = canvasPoint(e); token.x = snapVal(pt.x - ox); token.y = snapVal(pt.y - oy); el.style.left = `${token.x}px`; el.style.top = `${token.y}px`; });
+  el.addEventListener("pointerup", e => { if (!drag) return; drag = false; try { el.releasePointerCapture(e.pointerId); } catch {} saveVtt(); renderTokenInspector(); });
+  el.addEventListener("dblclick", () => { selectedTokenId = token.id; renderVtt(); });
 }
 
-document.getElementById("addCombatantBtn")?.addEventListener("click", () => {
-  const name = prompt("Combatant name?");
-  if (!name) return;
-
-  const initiative = Number(prompt("Initiative?", "0")) || 0;
-
-  vttState.combatants.push({
-    id: crypto.randomUUID(),
-    name,
-    initiative,
-    hp: ""
-  });
-
-  vttState.combatants.sort((a, b) => b.initiative - a.initiative);
-  saveVtt();
-  renderCombat();
-});
-
-document.getElementById("nextTurnBtn")?.addEventListener("click", () => {
-  if (!vttState.combatants.length) return;
-  vttState.turn = (vttState.turn + 1) % vttState.combatants.length;
-  saveVtt();
-  renderCombat();
-});
-
-function renderCombat() {
-  const list = document.getElementById("combatList");
-  if (!list) return;
-
-  list.innerHTML = "";
-
-  vttState.combatants.forEach((c, i) => {
-    const row = document.createElement("div");
-    row.className = "combatant";
-    row.classList.toggle("active", i === vttState.turn);
-
-    const name = document.createElement("strong");
-    name.textContent = c.name;
-
-    const init = document.createElement("input");
-    init.type = "number";
-    init.value = c.initiative;
-    init.title = "Initiative";
-    init.addEventListener("change", () => {
-      c.initiative = Number(init.value) || 0;
-      vttState.combatants.sort((a, b) => b.initiative - a.initiative);
-      saveVtt();
-      renderCombat();
-    });
-
-    const del = document.createElement("button");
-    del.textContent = "×";
-    del.addEventListener("click", () => {
-      vttState.combatants = vttState.combatants.filter(x => x.id !== c.id);
-      vttState.turn = Math.min(vttState.turn, vttState.combatants.length - 1);
-      saveVtt();
-      renderCombat();
-    });
-
-    row.append(name, init, del);
+function renderScenes() {
+  const list = document.getElementById("sceneList"); if (!list) return; list.innerHTML = "";
+  vttState.scenes.forEach(sc => {
+    const row = document.createElement("div"); row.className = "scene-row"; row.classList.toggle("active", sc.id === vttState.activeSceneId);
+    row.innerHTML = `<button type="button" class="scene-open">${vttEsc(sc.name)}</button><button type="button" class="scene-dupe" title="Duplicate">⧉</button><button type="button" class="scene-del" title="Delete">×</button>`;
+    row.querySelector(".scene-open").onclick = () => { vttState.activeSceneId = sc.id; selectedTokenId = null; renderVtt(); };
+    row.querySelector(".scene-dupe").onclick = () => { const copy = JSON.parse(JSON.stringify(sc)); copy.id = vttUid(); copy.name = `${sc.name} Copy`; copy.tokens = (copy.tokens || []).map(t => ({...t, id:vttUid()})); vttState.scenes.push(copy); vttState.activeSceneId = copy.id; renderVtt(); };
+    row.querySelector(".scene-del").onclick = () => { if (vttState.scenes.length <= 1) return alert("Keep at least one scene."); if (!confirm(`Delete scene "${sc.name}"?`)) return; vttState.scenes = vttState.scenes.filter(x => x.id !== sc.id); vttState.activeSceneId = vttState.scenes[0].id; renderVtt(); };
     list.appendChild(row);
   });
 }
-
-applySystem();
-
-document.addEventListener("DOMContentLoaded", () => {
-  const openVttBtn = document.getElementById("openVttBtn");
-  const vttModal = document.getElementById("vttModal");
-
-  if (!openVttBtn) {
-    console.error("VTT button not found. Add id='openVttBtn' to the button.");
-    return;
-  }
-
-  if (!vttModal) {
-    console.error("VTT modal not found. Add id='vttModal' to the modal.");
-    return;
-  }
-
-  openVttBtn.addEventListener("click", () => {
-    vttModal.classList.remove("hidden");
-    vttModal.setAttribute("aria-hidden", "false");
-
-    if (typeof renderVtt === "function") {
-      renderVtt();
-    }
-  });
-});
-
-/* ============================================================
-   SOURCE EXTENSIONS: CSS + HTML PATCHES
-   ============================================================ */
-
-function ensureSourceExtensionRoot() {
-  let root = document.getElementById("source-extension-root");
-  if (!root) {
-    root = document.createElement("div");
-    root.id = "source-extension-root";
-    document.body.appendChild(root);
-  }
-  return root;
+function selectedToken() { return activeScene().tokens.find(t => t.id === selectedTokenId) || null; }
+function renderTokenInspector() {
+  const panel = document.getElementById("tokenInspector"); if (!panel) return;
+  const tok = selectedToken();
+  if (!tok) { panel.className = "token-inspector empty"; panel.textContent = "Select a token."; return; }
+  const conds = ["Blinded","Charmed","Concentrating","Dead","Frightened","Grappled","Hidden","Invisible","Poisoned","Prone","Restrained","Stunned","Unconscious"];
+  panel.className = "token-inspector";
+  panel.innerHTML = `<label>Name <input id="tokName" type="text" value="${vttEsc(tok.name)}"></label><div class="vtt-grid-2"><label>HP <input id="tokHp" type="text" value="${vttEsc(tok.hp)}"></label><label>Max <input id="tokMaxHp" type="text" value="${vttEsc(tok.maxHp)}"></label><label>AC <input id="tokAc" type="text" value="${vttEsc(tok.ac)}"></label><label>Size <input id="tokSize" type="number" min="16" max="400" value="${tok.size}"></label><label>Color <input id="tokColor" type="color" value="${vttEsc(tok.color)}"></label><label class="inline-check-label"><input id="tokHidden" type="checkbox" ${tok.hidden ? "checked" : ""}><span class="check-mark small"></span> Hidden</label></div><label>Notes <textarea id="tokNotes" rows="3">${vttEsc(tok.notes)}</textarea></label><div class="condition-pills">${conds.map(c => `<button type="button" class="condition-pill ${tok.conditions.includes(c) ? "active" : ""}" data-condition="${c}">${c}</button>`).join("")}</div><div class="vtt-inline-row"><button id="tokToCombat" class="action-btn" type="button">Add to Combat</button><button id="tokDelete" class="action-btn danger" type="button">Delete Token</button></div>`;
+  function update() { tok.name=tokName.value; tok.hp=tokHp.value; tok.maxHp=tokMaxHp.value; tok.ac=tokAc.value; tok.size=Number(tokSize.value)||tok.size; tok.color=tokColor.value||tok.color; tok.hidden=tokHidden.checked; tok.notes=tokNotes.value; renderVtt(); }
+  panel.querySelectorAll("input, textarea").forEach(i => i.addEventListener("change", update));
+  panel.querySelectorAll(".condition-pill").forEach(b => b.onclick = () => { const c=b.dataset.condition; tok.conditions = tok.conditions.includes(c) ? tok.conditions.filter(x=>x!==c) : [...tok.conditions,c]; renderVtt(); });
+  tokDelete.onclick = () => { activeScene().tokens = activeScene().tokens.filter(t => t.id !== tok.id); selectedTokenId = null; renderVtt(); };
+  tokToCombat.onclick = () => addCombatantFromToken(tok);
 }
-
-function clearSourceExtensionPatches() {
-  document.querySelectorAll("[data-source-extension-style]").forEach(el => el.remove());
-
-  const root = document.getElementById("source-extension-root");
-  if (root) root.innerHTML = "";
+function addCombatantFromToken(tok) {
+  const initiative = Number(prompt(`Initiative for ${tok.name}?`, "0")) || 0;
+  vttState.combatants.push({ id:vttUid(), tokenId:tok.id, sceneId:activeScene().id, name:tok.name, initiative, hp:tok.hp||"", ac:tok.ac||"" });
+  sortCombatants(); renderVtt();
 }
-
-function normalizeCssBlocks(css) {
-  if (!css) return [];
-  return Array.isArray(css) ? css : [css];
-}
-
-function normalizeHtmlPatches(html) {
-  if (!html) return [];
-  return Array.isArray(html) ? html : [html];
-}
-
-function applySourceCss(src) {
-  normalizeCssBlocks(src.css).forEach((cssText, i) => {
-    if (typeof cssText !== "string") return;
-
-    const style = document.createElement("style");
-    style.dataset.sourceExtensionStyle = src.name || "unknown";
-    style.dataset.sourceExtensionIndex = String(i);
-    style.textContent = cssText;
-    document.head.appendChild(style);
+function sortCombatants() { vttState.combatants.sort((a,b)=>(Number(b.initiative)||0)-(Number(a.initiative)||0)); vttState.turn = Math.max(0, Math.min(vttState.turn, vttState.combatants.length-1)); }
+function renderCombat() {
+  const list = document.getElementById("combatList"); if (!list) return;
+  if (!vttState.combatants.length) { list.innerHTML = `<p class="vtt-empty">No combatants yet.</p>`; return; }
+  list.innerHTML = "";
+  vttState.combatants.forEach((c,i) => {
+    const row = document.createElement("div"); row.className = "combatant"; row.classList.toggle("active", i === vttState.turn);
+    row.innerHTML = `<strong>${i===vttState.turn ? "▶ " : ""}${vttEsc(c.name)}</strong><input type="number" value="${Number(c.initiative)||0}" title="Initiative"><input type="text" value="${vttEsc(c.hp||"")}" title="HP" placeholder="HP"><button type="button" title="Focus token">◎</button><button type="button" title="Remove">×</button>`;
+    const [init, hp] = row.querySelectorAll("input");
+    init.onchange = () => { c.initiative = Number(init.value)||0; sortCombatants(); renderCombat(); saveVtt(); };
+    hp.onchange = () => { c.hp = hp.value; const tok = activeScene().tokens.find(t => t.id === c.tokenId); if (tok) tok.hp = hp.value; renderVtt(); };
+    row.querySelectorAll("button")[0].onclick = () => { selectedTokenId = c.tokenId || null; renderVtt(); };
+    row.querySelectorAll("button")[1].onclick = () => { vttState.combatants = vttState.combatants.filter(x => x.id !== c.id); renderVtt(); };
+    list.appendChild(row);
   });
 }
-
-function applySourceHtmlPatch(src) {
-  const fallbackRoot = ensureSourceExtensionRoot();
-
-  normalizeHtmlPatches(src.html).forEach(patch => {
-    if (typeof patch === "string") {
-      fallbackRoot.insertAdjacentHTML("beforeend", patch);
-      return;
-    }
-
-    if (!patch || typeof patch !== "object") return;
-
-    const target = patch.target
-      ? document.querySelector(patch.target)
-      : fallbackRoot;
-
-    if (!target) {
-      console.warn(`Source HTML target not found: ${patch.target}`);
-      return;
-    }
-
-    const position = patch.position || "beforeend";
-    const html = String(patch.html || "");
-
-    if (position === "replace") {
-      target.innerHTML = html;
-    } else if (position === "outer") {
-      target.outerHTML = html;
-    } else {
-      target.insertAdjacentHTML(position, html);
-    }
+function rollDice(expr) {
+  const cleaned = String(expr).toLowerCase().replace(/\s+/g, "");
+  if (!/^[0-9d+\-*/().]+$/.test(cleaned)) throw new Error("Use dice like 1d20+5. Advanced keep/drop dice are not supported yet.");
+  const expanded = cleaned.replace(/(\d*)d(\d+)/g, (_, count, sides) => {
+    const n = Math.min(Number(count || 1), 100), s = Math.min(Number(sides), 10000);
+    return `(${Array.from({length:n}, () => Math.floor(Math.random()*s)+1).join("+")})`;
   });
-  }
-  function getAllConditions() {
-  return _extraSources.flatMap(src =>
-    (src.conditions || []).map(c => ({
-      src: src.name,
-      id: c.id || slugify(c.name || ''),
-      name: c.name || 'Unnamed Condition',
-      desc: c.desc || c.description || '',
-      effects: c.effects || [],
-      tags: c.tags || []
-    }))
-  );
+  return { total: Function(`"use strict"; return (${expanded});`)(), expanded };
 }
+function renderDiceLog() {
+  const log = document.getElementById("vttDiceLog"); if (!log) return;
+  log.innerHTML = (vttState.diceLog || []).slice(-8).reverse().map(r => `<div><strong>${vttEsc(r.expr)}</strong> = ${vttEsc(r.total)} <small>${vttEsc(r.expanded)}</small></div>`).join("") || `<p class="vtt-empty">No rolls yet.</p>`;
+}
+function drawMeasurement(a,b) {
+  const layer = document.getElementById("measureLayer"); if (!layer) return;
+  const sc = activeScene(), px = Math.hypot(b.x-a.x, b.y-a.y), ft = Math.round((px/sc.gridSize)*sc.gridFeet*10)/10;
+  layer.innerHTML = `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/><text x="${(a.x+b.x)/2}" y="${(a.y+b.y)/2-8}">${ft} ft</text>`;
+}
+function clearMeasurement() { const layer=document.getElementById("measureLayer"); if(layer) layer.innerHTML=""; }
+function pingAt(pt) { const layer=document.getElementById("pingLayer"); if(!layer) return; const p=document.createElement("span"); p.className="vtt-ping"; p.style.left=`${pt.x}px`; p.style.top=`${pt.y}px`; layer.appendChild(p); setTimeout(()=>p.remove(), 1000); }
+function editFog(pt, reveal) { const sc=activeScene(); sc.fogReveals=sc.fogReveals||[]; if(reveal) sc.fogReveals.push({x:Math.round(pt.x-90), y:Math.round(pt.y-90), r:180}); else sc.fogReveals=sc.fogReveals.filter(r => Math.hypot((r.x+r.r/2)-pt.x, (r.y+r.r/2)-pt.y) > r.r/2); renderVtt(); }
 
-function slugify(text) {
-  return String(text)
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
+function applySystem() {
+  const root = document.getElementById("modularSheetFields"); if (!root) return; root.innerHTML = "";
+  for (const field of activeSystem.extraFields || []) {
+    const wrap = document.createElement("label"); wrap.className = "system-field";
+    const label = document.createElement("span"); label.textContent = field.label || field.id;
+    let input;
+    if (field.type === "textarea") input = document.createElement("textarea");
+    else if (field.type === "select") { input = document.createElement("select"); for (const option of field.options || []) { const opt=document.createElement("option"); opt.value=option; opt.textContent=option; input.appendChild(opt); } }
+    else { input = document.createElement("input"); input.type = field.type || "text"; }
+    input.dataset.systemField = field.id; input.placeholder = field.placeholder || ""; wrap.append(label, input); root.appendChild(wrap);
+  }
 }
+function bindFollyVttEvents() {
+  document.querySelectorAll("[data-close]").forEach(btn => btn.addEventListener("click", () => closeModalById(btn.dataset.close)));
+  document.getElementById("openVttBtn")?.addEventListener("click", () => { openModalById("vttModal"); renderVtt(); });
+  document.getElementById("loadSystemBtn")?.addEventListener("click", () => document.getElementById("systemJsonInput")?.click());
+  document.getElementById("systemJsonInput")?.addEventListener("change", async e => { const file=e.target.files[0]; if(!file) return; const json=JSON.parse(await file.text()); activeSystem={...activeSystem,...json,terms:{...activeSystem.terms,...(json.terms||{})},extraFields:json.extraFields||[]}; saveSystem(); applySystem(); });
+  document.getElementById("mapUpload")?.addEventListener("change", async e => { const file=e.target.files[0]; if(!file) return; const sc=activeScene(); sc.map=await readFileAsDataURL(file); sc.mapName=file.name; renderVtt(); });
+  document.getElementById("tokenUpload")?.addEventListener("change", async e => { for (const file of Array.from(e.target.files||[])) activeScene().tokens.push(normalizeToken({id:vttUid(),name:file.name.replace(/\.[^/.]+$/,""),img:await readFileAsDataURL(file),x:100,y:100})); e.target.value=""; renderVtt(); });
+  addBlankTokenBtn?.addEventListener("click", () => { const name=prompt("Token name?", "New Token"); if(!name) return; activeScene().tokens.push(normalizeToken({id:vttUid(),name,x:100,y:100})); renderVtt(); });
+  toggleGridBtn?.addEventListener("click", () => { activeScene().grid=!activeScene().grid; renderVtt(); });
+  toggleFogBtn?.addEventListener("click", () => { const sc=activeScene(); sc.fog=!sc.fog; renderVtt(); });
+  clearTokensBtn?.addEventListener("click", () => { if(confirm("Clear all tokens in this scene?")) { activeScene().tokens=[]; selectedTokenId=null; renderVtt(); }});
+  sortCombatBtn?.addEventListener("click", () => { sortCombatants(); renderVtt(); });
+  nextTurnBtn?.addEventListener("click", () => { if(vttState.combatants.length) vttState.turn=(vttState.turn+1)%vttState.combatants.length; renderVtt(); });
+  addCombatantBtn?.addEventListener("click", () => { const tok=selectedToken(); if(tok && confirm(`Add selected token "${tok.name}" to combat?`)) return addCombatantFromToken(tok); const name=prompt("Combatant name?"); if(!name) return; const initiative=Number(prompt("Initiative?","0"))||0; vttState.combatants.push({id:vttUid(),name,initiative,hp:"",ac:""}); sortCombatants(); renderVtt(); });
+  addSceneBtn?.addEventListener("click", () => { const input=sceneNameInput; const sc=defaultScene(input?.value?.trim() || `Scene ${vttState.scenes.length+1}`); vttState.scenes.push(sc); vttState.activeSceneId=sc.id; if(input) input.value=""; renderVtt(); });
+  vttNotes?.addEventListener("input", e => { activeScene().notes=e.target.value; saveVtt(); });
+  vttToolSelect?.addEventListener("change", e => { currentTool=e.target.value; });
+  vttZoom?.addEventListener("input", e => { activeScene().zoom=Number(e.target.value)/100; renderVtt(); });
+  vttGridSize?.addEventListener("change", e => { activeScene().gridSize=Math.max(20, Number(e.target.value)||50); renderVtt(); });
+  vttGridFeet?.addEventListener("change", e => { activeScene().gridFeet=Math.max(1, Number(e.target.value)||5); renderVtt(); });
+  vttSnap?.addEventListener("change", e => { activeScene().snap=e.target.checked; renderVtt(); });
+  vttCenterBtn?.addEventListener("click", () => { const vp=mapViewport; if(vp){ vp.scrollLeft=0; vp.scrollTop=0; }});
+  mapCanvas?.addEventListener("pointerdown", e => { if(e.target.closest(".vtt-token")) return; const pt=canvasPoint(e); if(currentTool==="measure"){measureStart=pt; drawMeasurement(pt,pt);} if(currentTool==="ping") pingAt(pt); if(currentTool==="reveal") editFog(pt,true); if(currentTool==="hidefog") editFog(pt,false); if(currentTool==="select"){selectedTokenId=null; renderVtt();} });
+  mapCanvas?.addEventListener("pointermove", e => { if(currentTool==="measure" && measureStart) drawMeasurement(measureStart, canvasPoint(e)); });
+  mapCanvas?.addEventListener("pointerup", () => { if(currentTool==="measure") setTimeout(clearMeasurement, 2500); measureStart=null; });
+  vttRollBtn?.addEventListener("click", () => { try { const expr=vttDiceInput?.value||"1d20"; const r=rollDice(expr); vttState.diceLog.push({expr,total:r.total,expanded:r.expanded}); vttState.diceLog=vttState.diceLog.slice(-50); renderDiceLog(); saveVtt(); } catch(err) { alert(err.message); }});
+  vttExportBtn?.addEventListener("click", () => { const blob=new Blob([JSON.stringify(vttState,null,2)],{type:"application/json"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`follyvtt-table-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); });
+  vttImportInput?.addEventListener("change", async e => { const file=e.target.files[0]; if(!file) return; const imported=migrateVttState(JSON.parse(await file.text())); if(!confirm("Import this VTT table and replace the current local table?")) return; vttState=imported; selectedTokenId=null; renderVtt(); });
+  document.addEventListener("keydown", e => { if(document.getElementById("vttModal")?.classList.contains("hidden")) return; if(e.key==="Delete" && selectedTokenId){ activeScene().tokens=activeScene().tokens.filter(t=>t.id!==selectedTokenId); selectedTokenId=null; renderVtt(); } if(e.key==="Escape") closeModalById("vttModal"); });
+}
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => { bindFollyVttEvents(); applySystem(); renderVtt(); });
+else { bindFollyVttEvents(); applySystem(); renderVtt(); }
