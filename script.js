@@ -125,6 +125,7 @@ function restoreLoadedSources() {
     monsters: src.monsters || [],
     fields: src.fields || [],
     html: src.html || [],
+    css: src.css || [],
     abilities: src.abilities || src.abilityScores || [],
     driveFileId: src.driveFileId || null,
     syncedAt: src.syncedAt || null,
