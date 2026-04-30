@@ -3067,22 +3067,39 @@ function slugify(text) {
 }
 
 function renderCustomConditionsIntoExistingList() {
-  const grid = document.querySelector('.conditions-section .conditions-grid');
-  if (!grid) return;
+  const grid = document.querySelector('.conditions-grid');
+  if (!grid) {
+    console.warn('No .conditions-grid found');
+    return;
+  }
 
-  grid.querySelectorAll('[data-custom-condition]').forEach(el => el.remove());
+  grid.querySelectorAll('[data-custom-condition="true"]').forEach(el => el.remove());
 
-function getAllConditions() {
-  return _extraSources.flatMap(src =>
+  const customConditions = _extraSources.flatMap(src =>
     (src.conditions || []).map(c => ({
       src: src.name,
-      custom: true,
       id: c.id || slugify(c.name || ''),
       name: c.name || 'Unnamed Condition',
       desc: c.desc || c.description || '',
-      effects: c.effects || [],
-      tags: c.tags || [],
       icon: c.icon || '✨'
     }))
   );
+
+  console.log('Custom conditions:', customConditions);
+
+  customConditions.forEach(c => {
+    const label = document.createElement('label');
+    label.className = 'condition-toggle';
+    label.title = c.desc;
+    label.dataset.customCondition = 'true';
+
+    label.innerHTML = `
+      <input type="checkbox" data-key="condCustom_${c.id}" />
+      <span class="condition-btn">${c.icon} ${c.name}</span>
+    `;
+
+    grid.appendChild(label);
+  });
+
+  bindInputs?.();
 }
