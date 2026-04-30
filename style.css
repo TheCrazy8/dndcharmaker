@@ -3510,7 +3510,7 @@ body.dark-mode .condition-toggle input:checked + .condition-btn {
 
 .vtt-layout {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr) 340px;
+  grid-template-columns: 1fr; /* one column instead of two */
   gap: 0.75rem;
   min-height: 0;
   flex: 1;
