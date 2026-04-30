@@ -126,6 +126,7 @@ function restoreLoadedSources() {
     fields: src.fields || [],
     html: src.html || [],
     css: src.css || [],
+    conditions: src.conditions || [],
     abilities: src.abilities || src.abilityScores || [],
     driveFileId: src.driveFileId || null,
     syncedAt: src.syncedAt || null,
@@ -298,6 +299,7 @@ function loadSourceFiles(files) {
           fields:     data.fields     || [],
           html:       data.html       || [],
           css:        data.css        || [],
+          conditions: src.conditions || [],
           abilities:  data.abilities || data.abilityScores || [],
         };
         if (existing >= 0) {
