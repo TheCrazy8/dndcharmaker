@@ -2922,25 +2922,28 @@ document.addEventListener("DOMContentLoaded", () => {
     if (typeof renderVtt === "function") {
       renderVtt();
     }
-    
-    /* ============================================================
+  });
+});
+
+/* ============================================================
    SOURCE EXTENSIONS: CSS + HTML PATCHES
    ============================================================ */
 
 function ensureSourceExtensionRoot() {
-  let root = document.getElementById('source-extension-root');
+  let root = document.getElementById("source-extension-root");
   if (!root) {
-    root = document.createElement('div');
-    root.id = 'source-extension-root';
+    root = document.createElement("div");
+    root.id = "source-extension-root";
     document.body.appendChild(root);
   }
   return root;
 }
 
-function clearSourceExtensions() {
-  document.querySelectorAll('[data-source-extension-style]').forEach(el => el.remove());
-  const root = document.getElementById('source-extension-root');
-  if (root) root.innerHTML = '';
+function clearSourceExtensionPatches() {
+  document.querySelectorAll("[data-source-extension-style]").forEach(el => el.remove());
+
+  const root = document.getElementById("source-extension-root");
+  if (root) root.innerHTML = "";
 }
 
 function normalizeCssBlocks(css) {
@@ -2955,26 +2958,26 @@ function normalizeHtmlPatches(html) {
 
 function applySourceCss(src) {
   normalizeCssBlocks(src.css).forEach((cssText, i) => {
-    if (typeof cssText !== 'string') return;
+    if (typeof cssText !== "string") return;
 
-    const style = document.createElement('style');
-    style.dataset.sourceExtensionStyle = src.name || 'unknown';
+    const style = document.createElement("style");
+    style.dataset.sourceExtensionStyle = src.name || "unknown";
     style.dataset.sourceExtensionIndex = String(i);
     style.textContent = cssText;
     document.head.appendChild(style);
   });
 }
 
-function applySourceHtml(src) {
+function applySourceHtmlPatch(src) {
   const fallbackRoot = ensureSourceExtensionRoot();
 
   normalizeHtmlPatches(src.html).forEach(patch => {
-    if (typeof patch === 'string') {
-      fallbackRoot.insertAdjacentHTML('beforeend', patch);
+    if (typeof patch === "string") {
+      fallbackRoot.insertAdjacentHTML("beforeend", patch);
       return;
     }
 
-    if (!patch || typeof patch !== 'object') return;
+    if (!patch || typeof patch !== "object") return;
 
     const target = patch.target
       ? document.querySelector(patch.target)
@@ -2985,26 +2988,15 @@ function applySourceHtml(src) {
       return;
     }
 
-    const position = patch.position || 'beforeend';
-    const html = String(patch.html || '');
+    const position = patch.position || "beforeend";
+    const html = String(patch.html || "");
 
-    if (position === 'replace') {
+    if (position === "replace") {
       target.innerHTML = html;
-    } else if (position === 'outer') {
+    } else if (position === "outer") {
       target.outerHTML = html;
     } else {
       target.insertAdjacentHTML(position, html);
     }
   });
 }
-
-function renderSourceExtensions() {
-  clearSourceExtensions();
-
-  _extraSources.forEach(src => {
-    applySourceCss(src);
-    applySourceHtml(src);
-
-}
-  });
-});
