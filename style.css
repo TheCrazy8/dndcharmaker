@@ -3447,198 +3447,40 @@ body.dark-mode .condition-toggle input:checked + .condition-btn {
   margin-bottom: .75rem;
 }
 
-
-/* ============================================================
-   FollyVTT Enhanced Tabletop
-   ============================================================ */
-#openVttBtn,
-#loadSystemBtn {
-  font-family: var(--font-heading);
-  font-size: 0.72rem;
-  padding: 0.3rem 0.55rem;
-  background: #5c3010;
-  color: #f5efe0;
-  border: 1px solid var(--accent-gold);
-  border-radius: var(--radius);
-  cursor: pointer;
-}
-
-.modal.hidden { display: none !important; }
-.modal {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
+/* ---------- Source-defined sheet extensions ---------- */
+.source-sheet-extensions { display: flex; flex-direction: column; gap: 0.6rem; }
+.source-fields-grid {
   display: grid;
-  place-items: center;
-  background: rgba(0, 0, 0, 0.78);
-  padding: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.5rem;
 }
-.modal-content {
-  background: var(--bg-section);
-  color: var(--text-primary);
-  border: 2px solid var(--accent-red);
-  border-radius: 16px;
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.7);
-  position: relative;
-  overflow: hidden;
-}
-.modal-close {
-  position: absolute;
-  right: 0.75rem;
-  top: 0.65rem;
-  z-index: 4;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 999px;
-  border: 1px solid var(--accent-red);
-  background: #111;
-  color: #fff;
-  cursor: pointer;
-  font-size: 1.2rem;
-}
-.vtt-modal { width: min(98vw, 1680px); height: 94vh; }
-.vtt-shell { display: flex; flex-direction: column; height: 100%; padding: 0.85rem; gap: 0.55rem; }
-.vtt-topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding-right: 2.5rem; }
-.vtt-topbar h2 { color: var(--accent-red); font-family: var(--font-heading); margin: 0; }
-.vtt-subtitle { color: var(--text-muted); font-size: 0.82rem; margin-top: 0.2rem; }
-.vtt-topbar-actions, .vtt-toolbar, .vtt-inline-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; }
-.vtt-toolbar { padding: 0.45rem; background: #09090b; border: 1px solid var(--border-light); border-radius: 12px; }
-.vtt-toolbar.secondary label { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--text-muted); font-family: var(--font-heading); font-size: 0.72rem; text-transform: uppercase; }
-.vtt-toolbar input[type="number"] { width: 72px; }
-.vtt-toolbar input[type="range"] { width: 140px; }
-.action-btn.danger { border-color: #ff4f86; }
-
-.vtt-layout {
-  display: grid;
-  grid-template-columns: 260px minmax(0, 1fr) 340px;
-  gap: 0.75rem;
-  min-height: 0;
-  flex: 1;
-  height: auto;
-}
-.vtt-side-panel,
-.combat-panel {
-  overflow: auto;
-  background: #09090b;
+.source-field textarea { min-height: 72px; }
+.source-html-block {
   border: 1px solid var(--border-medium);
-  border-radius: 14px;
-  padding: 0.75rem;
+  border-radius: var(--radius);
+  padding: 0.55rem;
+  margin-bottom: 0.5rem;
+  background: var(--bg-input);
 }
-.vtt-side-panel h3,
-.combat-panel h3 { color: var(--accent-red); font-family: var(--font-heading); font-size: 0.82rem; margin: 0.45rem 0; }
-.vtt-side-panel hr,
-.combat-panel hr { border: none; border-top: 1px solid var(--border-light); margin: 0.75rem 0; }
-
-#mapViewport {
-  overflow: auto;
-  background: radial-gradient(circle at center, #17171a 0, #070708 65%);
-  border: 2px solid var(--accent-red);
-  border-radius: 16px;
-  min-height: 0;
-  position: relative;
-}
-#mapCanvas {
-  position: relative;
-  min-width: 1200px;
-  min-height: 800px;
-  transform-origin: top left;
-  background: #101012;
-}
-#mapCanvas::before {
-  content: "Load a map image or use the empty canvas";
-  position: absolute;
-  inset: 45% auto auto 50%;
-  transform: translate(-50%, -50%);
-  color: rgba(255, 255, 255, 0.28);
-  pointer-events: none;
+.source-html-block h4 {
   font-family: var(--font-heading);
+  color: var(--text-heading);
+  font-size: 0.78rem;
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
 }
-#mapImage {
-  display: block;
-  max-width: none;
-  width: auto;
-  min-width: 100%;
-  user-select: none;
-  pointer-events: none;
+.source-html-block h4 span {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  text-transform: none;
+  font-weight: 400;
 }
-#gridLayer,
-#fogLayer,
-#measureLayer,
-#pingLayer,
-#tokenLayer {
-  position: absolute;
-  inset: 0;
+.source-html-content {
+  color: var(--text-primary);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
-#gridLayer {
-  pointer-events: none;
-  z-index: 1;
-  background-image:
-    linear-gradient(rgba(255,255,255,.18) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.18) 1px, transparent 1px);
-  background-size: 50px 50px;
-}
-#gridLayer.hidden,
-#fogLayer.hidden { display: none; }
-#fogLayer { z-index: 2; background: rgba(0, 0, 0, 0.78); pointer-events: none; overflow: hidden; }
-#fogLayer span { position: absolute; display: block; border-radius: 999px; background: #000; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.78); mix-blend-mode: destination-out; }
-#measureLayer { z-index: 5; pointer-events: none; overflow: visible; }
-#measureLayer line { stroke: #fff; stroke-width: 4; paint-order: stroke; filter: drop-shadow(0 2px 3px #000); }
-#measureLayer text { fill: #fff; stroke: #000; stroke-width: 4; paint-order: stroke; font: 700 18px Arial, sans-serif; }
-#pingLayer { z-index: 6; pointer-events: none; }
-#tokenLayer { z-index: 4; }
-
-.vtt-token {
-  position: absolute;
-  display: grid;
-  place-items: center;
-  width: 50px;
-  height: 50px;
-  border-radius: 999px;
-  border: 3px solid #ff004f;
-  cursor: grab;
-  object-fit: cover;
-  background: #222;
-  color: #fff;
-  font-family: var(--font-heading);
-  font-weight: 700;
-  user-select: none;
-  box-shadow: 0 4px 16px rgba(0,0,0,.55);
-}
-.vtt-token.selected { outline: 3px solid white; outline-offset: 2px; z-index: 8; }
-.vtt-token.token-hidden { opacity: 0.45; filter: grayscale(1); }
-.token-badge { position: absolute; right: -8px; top: -8px; display: grid; place-items: center; min-width: 20px; height: 20px; border-radius: 999px; background: var(--accent-red); color: white; font-size: 0.7rem; }
-.vtt-ping { position: absolute; width: 20px; height: 20px; border: 4px solid #fff; border-radius: 999px; transform: translate(-50%, -50%); animation: vttPing 1s ease-out forwards; }
-@keyframes vttPing { from { opacity: 1; width: 10px; height: 10px; } to { opacity: 0; width: 120px; height: 120px; } }
-
-.scene-list { display: grid; gap: 0.35rem; margin-top: 0.5rem; }
-.scene-row { display: grid; grid-template-columns: 1fr 34px 34px; gap: 0.25rem; }
-.scene-row button { border: 1px solid var(--border-medium); background: #151518; color: var(--text-primary); border-radius: 8px; padding: 0.35rem; cursor: pointer; }
-.scene-row.active button:first-child { background: rgba(255, 0, 79, 0.25); color: #fff; border-color: var(--accent-red); }
-.vtt-log { max-height: 160px; overflow: auto; display: grid; gap: 0.35rem; font-size: 0.8rem; }
-.vtt-log div { background: #111114; border: 1px solid var(--border-light); border-radius: 8px; padding: 0.35rem; }
-.vtt-log small { display: block; color: var(--text-muted); word-break: break-word; }
-.vtt-empty, .token-inspector.empty { color: var(--text-muted); font-size: 0.85rem; }
-
-.combatant {
-  display: grid;
-  grid-template-columns: 1fr 58px 64px 32px 32px;
-  gap: .35rem;
-  align-items: center;
-  padding: .45rem;
-  border-bottom: 1px solid var(--border-light);
-}
-.combatant.active { background: rgba(255, 0, 79, .18); border-radius: 10px; }
-.combatant button { cursor: pointer; }
-
-.token-inspector { display: grid; gap: 0.55rem; }
-.token-inspector label { display: grid; gap: 0.2rem; color: var(--text-muted); font-size: 0.78rem; }
-.vtt-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; }
-.condition-pills { display: flex; flex-wrap: wrap; gap: 0.3rem; }
-.condition-pill { border: 1px solid var(--border-medium); border-radius: 999px; background: #151518; color: var(--text-muted); padding: 0.2rem 0.45rem; cursor: pointer; font-size: 0.72rem; }
-.condition-pill.active { background: var(--accent-red); color: #fff; border-color: var(--accent-red); }
-
-@media (max-width: 1050px) {
-  .vtt-layout { grid-template-columns: 1fr; }
-  .vtt-side-panel, .combat-panel { max-height: 260px; }
-  .vtt-modal { height: 96vh; }
-}
+.source-html-content ul,
+.source-html-content ol { margin-left: 1.2rem; }
+.source-html-content table { margin-top: 0.4rem; }
+.source-ability-block .ability-full { color: var(--text-muted); }

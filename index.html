@@ -33,6 +33,7 @@
         <input type="file" id="source-files" accept=".json" multiple style="display:none" />
       </label>
       <button id="btn-source-manager" class="action-btn" title="Manage Loaded Sources">🧾 Sources</button>
+      <input id="systemJsonInput" type="file" accept=".json" hidden>
     </div>
   </header>
 
@@ -1469,5 +1470,45 @@
       <div class="srd-list" id="monster-browser-list"></div>
     </div>
   </div>
+  <section id="vttSection" class="card">
+  <div id="vttModal" class="modal hidden">
+    <div class="modal-content vtt-modal">
+      <button class="modal-close" data-close="vttModal">×</button>
+      <h2>🗺️ FollyVTT Tabletop</h2>
+
+      <div class="vtt-toolbar">
+        <label class="btn">
+          Load Map
+          <input id="mapUpload" type="file" accept="image/*" hidden>
+        </label>
+
+        <label class="btn">
+          Add Token
+          <input id="tokenUpload" type="file" accept="image/*" hidden>
+        </label>
+
+        <button id="toggleGridBtn">Grid</button>
+        <button id="clearTokensBtn">Clear Tokens</button>
+        <button id="addCombatantBtn">Add Combatant</button>
+        <button id="nextTurnBtn">Next Turn</button>
+      </div>
+
+      <div class="vtt-layout">
+        <div id="mapViewport">
+          <div id="mapCanvas">
+            <img id="mapImage" alt="">
+            <div id="gridLayer"></div>
+            <div id="tokenLayer"></div>
+          </div>
+        </div>
+
+        <aside class="combat-panel">
+          <h3>⚔️ Combat Tracker</h3>
+          <div id="combatList"></div>
+        </aside>
+      </div>
+    </div>
+  </div>
+  </section>
 </body>
 </html>
