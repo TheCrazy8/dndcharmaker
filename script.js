@@ -134,6 +134,8 @@ function restoreLoadedSources() {
   updateSourceFilters();
   renderSourceExtensions();
   renderCustomConditionsIntoExistingList();
+  renderSourceAbilities();
+
 }
 
 /** Returns all spells (SRD + any loaded sources), each tagged with a .src field. */
@@ -350,6 +352,7 @@ function loadSourceFiles(files) {
     renderSourceExtensions();
     renderSourceManagerList();  
     renderCustomConditionsIntoExistingList();
+    renderSourceAbilities();
    
     const summary = _extraSources.map(s =>
       ` ${s.name}: ${s.spells.length} spells, ${s.feats.length} feats, ` +
@@ -3103,4 +3106,28 @@ function renderCustomConditionsIntoExistingList() {
   });
 
   bindInputs?.();
+}
+
+function renderSourceAbilities() {
+  const container = document.getElementById('ability-scores');
+  if (!container) return;
+
+  // remove previously added
+  container.querySelectorAll('[data-source-ability]').forEach(el => el.remove());
+
+  const abilities = _extraSources.flatMap(src => src.abilities || []);
+
+  abilities.forEach(ab => {
+    const div = document.createElement('div');
+    div.className = 'ability';
+    div.dataset.sourceAbility = 'true';
+
+    div.innerHTML = `
+      <label>${ab.name}</label>
+      <input type="number" data-key="${ab.id}Score" value="10" />
+      <div id="${ab.id}-mod">+0</div>
+    `;
+
+    container.appendChild(div);
+  });
 }
