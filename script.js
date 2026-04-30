@@ -133,6 +133,7 @@ function restoreLoadedSources() {
   }));
   updateSourceFilters();
   renderSourceExtensions();
+  renderCustomConditionsIntoExistingList();
 }
 
 /** Returns all spells (SRD + any loaded sources), each tagged with a .src field. */
