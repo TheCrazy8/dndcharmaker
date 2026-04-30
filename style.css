@@ -3642,3 +3642,211 @@ body.dark-mode .condition-toggle input:checked + .condition-btn {
   .vtt-side-panel, .combat-panel { max-height: 260px; }
   .vtt-modal { height: 96vh; }
 }
+
+
+/* ============================================================
+   Page 5: Tabletop / VTT Tools
+   ============================================================ */
+.vtt-page { scroll-margin-top: 80px; }
+.vtt-page-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.vtt-page-header .section-title { margin-bottom: 0.25rem; }
+.vtt-page-subtitle { color: var(--text-muted); font-size: 0.9rem; }
+.vtt-import-export,
+.vtt-mini-actions,
+.vtt-scene-add,
+.vtt-dice-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.vtt-toolbar.section {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+.vtt-tool-label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-heading);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.vtt-tool-label select { width: 135px; }
+.vtt-tool-label input[type="number"] { width: 72px; }
+.vtt-tool-label input[type="range"] { width: 110px; }
+.vtt-snap-label { margin-left: 0.25rem; }
+.vtt-page-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 0.75rem;
+  align-items: start;
+  height: auto;
+}
+.vtt-map-section { min-height: 680px; }
+.vtt-map-viewport {
+  overflow: auto;
+  background: radial-gradient(circle at center, #17171a 0, #09090b 65%);
+  border: 2px solid var(--border-dark);
+  border-radius: var(--radius-lg);
+  height: 680px;
+  box-shadow: inset 0 0 30px var(--shadow-inset);
+}
+.vtt-map-canvas {
+  position: relative;
+  min-width: 1000px;
+  min-height: 680px;
+  transform-origin: top left;
+}
+.vtt-map-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  font-family: var(--font-heading);
+  letter-spacing: 0.06em;
+  pointer-events: none;
+}
+#mapImage {
+  display: none;
+  max-width: none;
+  width: 100%;
+  min-height: 680px;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+#gridLayer,
+#fogLayer,
+#tokenLayer,
+#pingLayer,
+#measureLayer {
+  position: absolute;
+  inset: 0;
+}
+#gridLayer {
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.16) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+#gridLayer.hidden,
+#fogLayer.hidden { display: none; }
+#fogLayer {
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.72);
+}
+#fogLayer span {
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(255,255,255,.95);
+  mix-blend-mode: destination-out;
+}
+#tokenLayer { pointer-events: none; }
+.vtt-token {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border-radius: 999px;
+  border: 3px solid var(--accent-red);
+  cursor: grab;
+  object-fit: cover;
+  background: #222;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  pointer-events: auto;
+  box-shadow: 0 3px 12px rgba(0,0,0,.65);
+  user-select: none;
+}
+.vtt-token.selected { outline: 3px solid #fff; z-index: 5; }
+.vtt-token.token-hidden { opacity: .45; filter: grayscale(1); }
+.token-badge {
+  position: absolute;
+  right: -8px;
+  top: -8px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--accent-red);
+  color: #fff;
+  font-size: .7rem;
+  display: grid;
+  place-items: center;
+}
+#measureLayer { pointer-events: none; overflow: visible; }
+#measureLayer line { stroke: var(--accent-red); stroke-width: 3; }
+#measureLayer text { fill: #fff; paint-order: stroke; stroke: #000; stroke-width: 4; font: 700 16px sans-serif; }
+.vtt-ping {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -50%);
+  border: 3px solid var(--accent-red);
+  border-radius: 999px;
+  animation: vtt-ping 1s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes vtt-ping {
+  from { opacity: 1; width: 18px; height: 18px; }
+  to { opacity: 0; width: 90px; height: 90px; }
+}
+.vtt-sidebars { display: flex; flex-direction: column; gap: 0.6rem; }
+.combat-list,
+.scene-list,
+.vtt-dice-log { display: flex; flex-direction: column; gap: 0.35rem; }
+.combatant,
+.scene-row,
+.vtt-dice-log div {
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius);
+  background: var(--bg-input);
+  padding: 0.35rem;
+}
+.combatant {
+  display: grid;
+  grid-template-columns: 1fr 60px 74px 32px 32px;
+  gap: 0.3rem;
+  align-items: center;
+}
+.combatant.active { border-color: var(--accent-red); box-shadow: 0 0 0 2px rgba(255,0,79,.25); }
+.combatant strong { color: var(--text-heading); overflow-wrap: anywhere; }
+.scene-row { display: grid; grid-template-columns: 1fr 36px 36px; gap: 0.3rem; }
+.scene-row.active { border-color: var(--accent-red); }
+.scene-row button,
+.combatant button { cursor: pointer; }
+.scene-open { text-align: left; }
+.token-inspector { display: flex; flex-direction: column; gap: 0.45rem; }
+.token-inspector.empty,
+.vtt-empty { color: var(--text-muted); font-style: italic; }
+.vtt-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+.condition-pills { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+.condition-pill {
+  border: 1px solid var(--border-medium);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border-radius: 999px;
+  padding: 0.15rem 0.45rem;
+  cursor: pointer;
+}
+.condition-pill.active { background: var(--accent-red); border-color: var(--accent-red); color: #fff; }
+.vtt-dice-log small { display: block; color: var(--text-muted); overflow-wrap: anywhere; }
+@media (max-width: 1000px) {
+  .vtt-page-layout { grid-template-columns: 1fr; }
+  .vtt-sidebars { order: -1; }
+  .vtt-map-section,
+  .vtt-map-viewport { min-height: 520px; height: 520px; }
+}
