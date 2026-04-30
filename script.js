@@ -3015,4 +3015,24 @@ function applySourceHtmlPatch(src) {
       target.insertAdjacentHTML(position, html);
     }
   });
+  }
+  function getAllConditions() {
+  return _extraSources.flatMap(src =>
+    (src.conditions || []).map(c => ({
+      src: src.name,
+      id: c.id || slugify(c.name || ''),
+      name: c.name || 'Unnamed Condition',
+      desc: c.desc || c.description || '',
+      effects: c.effects || [],
+      tags: c.tags || []
+    }))
+  );
+}
+
+function slugify(text) {
+  return String(text)
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
 }
