@@ -3105,8 +3105,9 @@ function renderCustomConditionsIntoExistingList() {
     grid.appendChild(label);
   });
 
-  bindInputs?.();
-}
+if (typeof bindInputs === 'function') {
+  bindInputs();
+}}
 
 function renderSourceAbilities() {
   const container = document.getElementById('ability-scores');
