@@ -1469,42 +1469,5 @@
       <div class="srd-list" id="monster-browser-list"></div>
     </div>
   </div>
-  <section id="vttSection" class="card">
-    <div id="vttModal" class="modal hidden" aria-hidden="true">
-      <div class="modal-content vtt-modal" role="dialog" aria-modal="true" aria-label="FollyVTT Tabletop">
-        <button class="modal-close" data-close="vttModal" title="Close VTT">×</button>
-        <div class="vtt-shell">
-          <header class="vtt-topbar">
-            <div><h2>🗺️ FollyVTT Tabletop</h2><p class="vtt-subtitle">Scenes, maps, tokens, initiative, measurement, fog, notes, dice, and local import/export.</p></div>
-            <div class="vtt-topbar-actions"><button id="vttExportBtn" class="action-btn" type="button">💾 Export Table</button><label class="action-btn">📂 Import Table<input id="vttImportInput" type="file" accept=".json,application/json" hidden></label></div>
-          </header>
-          <div class="vtt-toolbar" role="toolbar" aria-label="VTT controls">
-            <label class="action-btn">🖼️ Load Map <input id="mapUpload" type="file" accept="image/*" hidden></label>
-            <label class="action-btn">⭕ Add Token <input id="tokenUpload" type="file" accept="image/*" multiple hidden></label>
-            <button id="addBlankTokenBtn" class="action-btn" type="button">➕ Blank Token</button>
-            <button id="addCombatantBtn" class="action-btn" type="button">⚔️ Combatant</button>
-            <button id="nextTurnBtn" class="action-btn" type="button">⏭️ Next</button>
-            <button id="sortCombatBtn" class="action-btn" type="button">🔽 Sort Init</button>
-            <button id="toggleGridBtn" class="action-btn" type="button">▦ Grid</button>
-            <button id="toggleFogBtn" class="action-btn" type="button">🌫️ Fog</button>
-            <button id="clearTokensBtn" class="action-btn danger" type="button">🧹 Clear Tokens</button>
-          </div>
-          <div class="vtt-toolbar secondary">
-            <label>Tool <select id="vttToolSelect"><option value="select">Select / Move</option><option value="measure">Measure</option><option value="ping">Ping</option><option value="reveal">Reveal Fog</option><option value="hidefog">Hide Fog</option></select></label>
-            <label>Zoom <input id="vttZoom" type="range" min="40" max="220" value="100"></label>
-            <label>Grid px <input id="vttGridSize" type="number" min="20" max="200" value="50"></label>
-            <label>Grid ft <input id="vttGridFeet" type="number" min="1" max="50" value="5"></label>
-            <label class="inline-check-label"><input id="vttSnap" type="checkbox" checked><span class="check-mark small"></span> Snap</label>
-            <button id="vttCenterBtn" class="action-btn" type="button">🎯 Center</button>
-          </div>
-          <div class="vtt-layout">
-            <aside class="vtt-side-panel scenes-panel"><h3>🎬 Scenes</h3><div class="vtt-inline-row"><input id="sceneNameInput" type="text" placeholder="Scene name…"><button id="addSceneBtn" class="action-btn" type="button">Add</button></div><div id="sceneList" class="scene-list"></div><hr><h3>📝 Notes</h3><textarea id="vttNotes" rows="8" placeholder="Session notes, room descriptions, reminders…"></textarea><h3>🎲 Dice</h3><div class="vtt-inline-row"><input id="vttDiceInput" type="text" value="1d20" placeholder="2d6+3"><button id="vttRollBtn" class="action-btn" type="button">Roll</button></div><div id="vttDiceLog" class="vtt-log"></div></aside>
-            <div id="mapViewport" tabindex="0" aria-label="VTT map viewport"><div id="mapCanvas"><img id="mapImage" alt="Loaded battle map"><div id="gridLayer"></div><div id="fogLayer"></div><svg id="measureLayer" aria-hidden="true"></svg><div id="pingLayer"></div><div id="tokenLayer"></div></div></div>
-            <aside class="vtt-side-panel combat-panel"><h3>⚔️ Combat Tracker</h3><div id="combatList"></div><hr><h3>⭕ Token Inspector</h3><div id="tokenInspector" class="token-inspector empty">Select a token.</div></aside>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
 </body>
 </html>
