@@ -336,6 +336,19 @@ function loadSourceFiles(files) {
       try {
         const data = JSON.parse(evt.target.result);
         validateSourceData(data);
+         if (sourceHasScript(data)) {
+  const ok = confirm(
+    'Warning: this source file contains custom JavaScript.\n\n' +
+    'Only load source files from people you trust. Custom scripts can change the page, access sheet data, and run code in this app.\n\n' +
+    'Load and run this source script?'
+  );
+
+  if (!ok) {
+    errors.push(`${file.name}: skipped because it contains JavaScript.`);
+    if (loaded + errors.length === total) finalize();
+    return;
+  }
+}
         const name = (typeof data.source === 'string' && data.source.trim())
           ? data.source.trim()
           : sourceNameFromFile(file.name);
