@@ -297,12 +297,6 @@ function updateSourceFilters() {
   });
 }
 
-function refreshSourceDrivenUI() {
-  updateSourceFilters();
-  renderSourceExtensions();
-  renderCustomConditionsIntoExistingList();
-}
-
 function loadSourceFiles(files) {
   if (!files || files.length === 0) return;
   let loaded = 0;
@@ -353,7 +347,9 @@ function loadSourceFiles(files) {
     persistLoadedSources();
     updateSourceFilters();
     renderSourceExtensions();
-    renderSourceManagerList();
+    renderSourceManagerList();  
+    renderCustomConditionsIntoExistingList();
+   
     const summary = _extraSources.map(s =>
       ` ${s.name}: ${s.spells.length} spells, ${s.feats.length} feats, ` +
       `${Object.keys(s.subclasses).length} subclass groups, ${s.monsters.length} monsters, ` +
