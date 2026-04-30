@@ -283,6 +283,7 @@ function loadSourceFiles(files) {
           monsters:   data.monsters   || [],
           fields:     data.fields     || [],
           html:       data.html       || [],
+          css:        data.css        || [],
           abilities:  data.abilities || data.abilityScores || [],
         };
         if (existing >= 0) {
