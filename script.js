@@ -266,6 +266,29 @@ function validateSourceData(data) {
       throw new Error(`conditions[${i}].tags must be an array.`);
     }
   });
+     if (data.script !== undefined && typeof data.script !== 'string') {
+  throw new Error('"script" must be a string.');
+}
+
+if (data.scripts !== undefined) {
+  if (!Array.isArray(data.scripts)) throw new Error('"scripts" must be an array.');
+
+  data.scripts.forEach((s, i) => {
+    if (typeof s === 'string') return;
+
+    if (!s || typeof s !== 'object') {
+      throw new Error(`scripts[${i}] must be a string or object.`);
+    }
+
+    if (typeof s.code !== 'string') {
+      throw new Error(`scripts[${i}].code must be a string.`);
+    }
+
+    if (s.name !== undefined && typeof s.name !== 'string') {
+      throw new Error(`scripts[${i}].name must be a string.`);
+    }
+  });
+}
 }
 }
 
@@ -3131,4 +3154,64 @@ function renderSourceAbilities() {
 
     container.appendChild(div);
   });
+}
+
+function sourceHasScript(data) {
+  return typeof data.script === 'string' ||
+    (Array.isArray(data.scripts) && data.scripts.length > 0);
+}
+
+function normalizeSourceScripts(src) {
+  const scripts = [];
+
+  if (typeof src.script === 'string' && src.script.trim()) {
+    scripts.push({
+      name: 'Inline script',
+      code: src.script
+    });
+  }
+
+  if (Array.isArray(src.scripts)) {
+    src.scripts.forEach((s, i) => {
+      if (typeof s === 'string') {
+        scripts.push({
+          name: `Script ${i + 1}`,
+          code: s
+        });
+      } else if (s && typeof s === 'object' && typeof s.code === 'string') {
+        scripts.push({
+          name: s.name || `Script ${i + 1}`,
+          code: s.code
+        });
+      }
+    });
+  }
+
+  return scripts;
+}
+
+function runSourceScripts(src) {
+  const scripts = normalizeSourceScripts(src);
+  if (!scripts.length) return;
+
+  window.FollyVTT = window.FollyVTT || {};
+  window.FollyVTT.sources = _extraSources;
+  window.FollyVTT.saveToStorage = saveToStorage;
+  window.FollyVTT.recalcAll = recalcAll;
+  window.FollyVTT.renderSourceExtensions = renderSourceExtensions;
+
+  scripts.forEach(script => {
+    try {
+      const fn = new Function('FollyVTT', script.code);
+      fn(window.FollyVTT);
+      console.log(`Ran source script: ${src.name} / ${script.name}`);
+    } catch (err) {
+      console.error(`Source script failed: ${src.name} / ${script.name}`, err);
+      alert(`Source script failed: ${src.name} / ${script.name}\n\n${err.message}`);
+    }
+  });
+}
+
+function runAllSourceScripts() {
+  _extraSources.forEach(runSourceScripts);
 }
