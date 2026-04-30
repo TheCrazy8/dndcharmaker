@@ -239,6 +239,31 @@ function validateSourceData(data) {
   if (data.html !== undefined && typeof data.html !== 'string' && !Array.isArray(data.html)) {
     throw new Error('"html" must be a string or an array.');
   }
+  if (data.conditions !== undefined) {
+  if (!Array.isArray(data.conditions)) throw new Error('"conditions" must be an array.');
+
+  data.conditions.forEach((c, i) => {
+    if (typeof c.name !== 'string' || !c.name.trim()) {
+      throw new Error(`conditions[${i}].name must be a non-empty string.`);
+    }
+
+    if (c.desc !== undefined && typeof c.desc !== 'string') {
+      throw new Error(`conditions[${i}].desc must be a string.`);
+    }
+
+    if (c.description !== undefined && typeof c.description !== 'string') {
+      throw new Error(`conditions[${i}].description must be a string.`);
+    }
+
+    if (c.effects !== undefined && !Array.isArray(c.effects)) {
+      throw new Error(`conditions[${i}].effects must be an array.`);
+    }
+
+    if (c.tags !== undefined && !Array.isArray(c.tags)) {
+      throw new Error(`conditions[${i}].tags must be an array.`);
+    }
+  });
+}
 }
 
 /** Derives a source name from a filename (strips extension, uppercases). */
