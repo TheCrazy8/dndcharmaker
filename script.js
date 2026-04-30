@@ -128,6 +128,8 @@ function restoreLoadedSources() {
     css: src.css || [],
     conditions: src.conditions || [],
     abilities: src.abilities || src.abilityScores || [],
+    script:     data.script || '',
+    scripts:    data.scripts || [],
     driveFileId: src.driveFileId || null,
     syncedAt: src.syncedAt || null,
   }));
@@ -135,6 +137,7 @@ function restoreLoadedSources() {
   renderSourceExtensions();
   renderCustomConditionsIntoExistingList();
   renderSourceAbilities();
+   runAllSourceScripts();
 
 }
 
@@ -365,6 +368,8 @@ function loadSourceFiles(files) {
           css:        data.css        || [],
           conditions: data.conditions || [],
           abilities:  data.abilities || data.abilityScores || [],
+          script: data.script || '',
+          scripts: data.scripts || [],
         };
         if (existing >= 0) {
           _extraSources[existing] = entry;
@@ -389,6 +394,7 @@ function loadSourceFiles(files) {
     renderSourceManagerList();  
     renderCustomConditionsIntoExistingList();
     renderSourceAbilities();
+     runAllSourceScripts();
    
     const summary = _extraSources.map(s =>
       ` ${s.name}: ${s.spells.length} spells, ${s.feats.length} feats, ` +
