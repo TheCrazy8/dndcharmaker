@@ -3072,26 +3072,17 @@ function renderCustomConditionsIntoExistingList() {
 
   grid.querySelectorAll('[data-custom-condition]').forEach(el => el.remove());
 
-  getAllConditions()
-    .filter(c => c.custom)
-    .forEach(c => {
-      const label = document.createElement('label');
-      label.className = 'condition-toggle';
-      label.title = c.desc || c.effects?.join(' ') || c.name;
-      label.dataset.customCondition = 'true';
-
-      const input = document.createElement('input');
-      input.type = 'checkbox';
-      input.dataset.key = `condCustom_${c.id}`;
-
-      const span = document.createElement('span');
-      span.className = 'condition-btn';
-      span.textContent = `${c.icon || '✨'} ${c.name}`;
-
-      label.append(input, span);
-      grid.appendChild(label);
-    });
-
-  bindInputs?.();
+function getAllConditions() {
+  return _extraSources.flatMap(src =>
+    (src.conditions || []).map(c => ({
+      src: src.name,
+      custom: true,
+      id: c.id || slugify(c.name || ''),
+      name: c.name || 'Unnamed Condition',
+      desc: c.desc || c.description || '',
+      effects: c.effects || [],
+      tags: c.tags || [],
+      icon: c.icon || '✨'
+    }))
+  );
 }
-
