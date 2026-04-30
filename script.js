@@ -309,9 +309,10 @@ function loadSourceFiles(files) {
     renderSourceExtensions();
     renderSourceManagerList();
     const summary = _extraSources.map(s =>
-      `  ${s.name}: ${s.spells.length} spells, ${s.feats.length} feats, ` +
+      ` ${s.name}: ${s.spells.length} spells, ${s.feats.length} feats, ` +
       `${Object.keys(s.subclasses).length} subclass groups, ${s.monsters.length} monsters, ` +
-      `${(s.fields || []).length} fields, ${normalizeSourceHtmlBlocks(s.html).length} HTML blocks, ${(s.abilities || []).length} abilities`
+      `${(s.fields || []).length} fields, ${normalizeHtmlPatches(s.html).length} HTML patches, ` +
+      `${normalizeCssBlocks(s.css).length} CSS blocks, ${(s.abilities || []).length} abilities`
     ).join('\n');
     let msg = '';
     if (loaded > 0) {
