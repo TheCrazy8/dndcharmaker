@@ -128,8 +128,8 @@ function restoreLoadedSources() {
     css: src.css || [],
     conditions: src.conditions || [],
     abilities: src.abilities || src.abilityScores || [],
-    script:     data.script || '',
-    scripts:    data.scripts || [],
+    script:     src.script || '',
+    scripts:    src.scripts || [],
     driveFileId: src.driveFileId || null,
     syncedAt: src.syncedAt || null,
   }));
