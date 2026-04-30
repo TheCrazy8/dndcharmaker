@@ -324,7 +324,7 @@ function loadSourceFiles(files) {
           fields:     data.fields     || [],
           html:       data.html       || [],
           css:        data.css        || [],
-          conditions: src.conditions || [],
+          conditions: data.conditions || [],
           abilities:  data.abilities || data.abilityScores || [],
         };
         if (existing >= 0) {
