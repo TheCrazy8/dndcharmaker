@@ -225,6 +225,19 @@ function validateSourceData(data) {
       if (typeof ab.name !== 'string' || !ab.name.trim()) throw new Error(`abilities[${i}].name must be a non-empty string.`);
     });
   }
+  if (data.css !== undefined && typeof data.css !== 'string' && !Array.isArray(data.css)) {
+    throw new Error('"css" must be a string or an array of strings.');
+  }
+
+  if (Array.isArray(data.css)) {
+    data.css.forEach((block, i) => {
+      if (typeof block !== 'string') throw new Error(`css[${i}] must be a string.`);
+    });
+  }
+
+  if (data.html !== undefined && typeof data.html !== 'string' && !Array.isArray(data.html)) {
+    throw new Error('"html" must be a string or an array.');
+  }
 }
 
 /** Derives a source name from a filename (strips extension, uppercases). */
