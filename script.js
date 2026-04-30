@@ -297,6 +297,12 @@ function updateSourceFilters() {
   });
 }
 
+function refreshSourceDrivenUI() {
+  updateSourceFilters();
+  renderSourceExtensions();
+  renderCustomConditionsIntoExistingList();
+}
+
 function loadSourceFiles(files) {
   if (!files || files.length === 0) return;
   let loaded = 0;
@@ -3063,3 +3069,33 @@ function slugify(text) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
 }
+
+function renderCustomConditionsIntoExistingList() {
+  const grid = document.querySelector('.conditions-section .conditions-grid');
+  if (!grid) return;
+
+  grid.querySelectorAll('[data-custom-condition]').forEach(el => el.remove());
+
+  getAllConditions()
+    .filter(c => c.custom)
+    .forEach(c => {
+      const label = document.createElement('label');
+      label.className = 'condition-toggle';
+      label.title = c.desc || c.effects?.join(' ') || c.name;
+      label.dataset.customCondition = 'true';
+
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.dataset.key = `condCustom_${c.id}`;
+
+      const span = document.createElement('span');
+      span.className = 'condition-btn';
+      span.textContent = `${c.icon || '✨'} ${c.name}`;
+
+      label.append(input, span);
+      grid.appendChild(label);
+    });
+
+  bindInputs?.();
+}
+
