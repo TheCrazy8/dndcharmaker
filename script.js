@@ -130,6 +130,7 @@ function restoreLoadedSources() {
     abilities: src.abilities || src.abilityScores || [],
     script:     src.script || '',
     scripts:    src.scripts || [],
+    items: src.items || [],
     driveFileId: src.driveFileId || null,
     syncedAt: src.syncedAt || null,
   }));
@@ -293,6 +294,23 @@ if (data.scripts !== undefined) {
   });
 }
 }
+   if (data.items !== undefined) {
+  if (!Array.isArray(data.items)) throw new Error('"items" must be an array.');
+
+  data.items.forEach((item, i) => {
+    if (typeof item.name !== 'string' || !item.name.trim()) {
+      throw new Error(`items[${i}].name must be a non-empty string.`);
+    }
+
+    if (item.type !== undefined && typeof item.type !== 'string') {
+      throw new Error(`items[${i}].type must be a string.`);
+    }
+
+    if (item.desc !== undefined && typeof item.desc !== 'string') {
+      throw new Error(`items[${i}].desc must be a string.`);
+    }
+  });
+}
 }
 
 /** Derives a source name from a filename (strips extension, uppercases). */
@@ -370,6 +388,7 @@ function loadSourceFiles(files) {
           abilities:  data.abilities || data.abilityScores || [],
           script: data.script || '',
           scripts: data.scripts || [],
+          items: data.items || [],
         };
         if (existing >= 0) {
           _extraSources[existing] = entry;
@@ -3233,4 +3252,22 @@ function runSourceScripts(src) {
 
 function runAllSourceScripts() {
   _extraSources.forEach(runSourceScripts);
+}
+
+function getAllItems() {
+  return _extraSources.flatMap(src =>
+    (src.items || []).map(item => ({
+      src: src.name,
+      id: item.id || slugify(item.name),
+      name: item.name,
+      type: item.type || 'Item',
+      rarity: item.rarity || '',
+      weight: item.weight || '',
+      value: item.value || '',
+      desc: item.desc || item.description || '',
+      tags: item.tags || [],
+      properties: item.properties || [],
+      quantity: item.quantity || 1
+    }))
+  );
 }
