@@ -36,9 +36,6 @@ A complete, interactive **Dungeons & Dragons 5e (2024)** character sheet web app
 - 🌙 **Dark / Light mode** toggle
 - 📱 **Responsive** — works on desktop and tablets
 
-### Class List (40 Classes)
-Abyssal, Artificer, Barbarian, Bard, Blood Hunter, Cleric, Dragon Knight, Druid, Elementalist, Fighter, Gunslinger, Illrigger, Kinetic, Magus, Martyr, Medium, Monk, Necromancer, Occultist, Paladin, Paragon, Psion, Pugilist, Ranger, Rogue, Runecrafter, Shaman, Shaper, Sorcerer, Spellblade, Summoner, Swashbuckler, Vessel, Vigilante, Warlock, Warlord, Weaver, Witch, Witcher, Wizard
-
 ---
 
 ## 🚀 Deploying to GitHub Pages
